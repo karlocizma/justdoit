@@ -50,7 +50,7 @@ const topbarStyles = {
   },
 };
 
-function TopBar({ user, syncState = "connected", onNavigate, onGoSettings, onSignOut }) {
+function TopBar({ user, syncState = "connected", onNavigate, onGoSettings, onSignOut, onSearch }) {
   const [anchor, setAnchor] = React.useState(null);
   return (
     <header style={topbarStyles.root}>
@@ -59,6 +59,8 @@ function TopBar({ user, syncState = "connected", onNavigate, onGoSettings, onSig
         <input
           style={topbarStyles.searchInput}
           placeholder="Search notes and tasks…"
+          onFocus={() => onSearch && onSearch("")}
+          onChange={(e) => onSearch && onSearch(e.target.value)}
         />
       </div>
       <div style={topbarStyles.right}>

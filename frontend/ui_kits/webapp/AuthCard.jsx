@@ -65,15 +65,36 @@ const authStyles = {
 };
 
 function AuthCard({ onSignIn }) {
-  const [mode, setMode] = React.useState("login"); // 'login' | 'register' | 'check-email' | 'forgot' | 'forgot-sent'
+  const [mode, setMode] = React.useState("login"); // 'login' | 'register' | 'check-email' | 'forgot' | 'forgot-sent' | 'reset-password'
   const [email, setEmail] = React.useState("alice@example.com");
+
+  if (mode === "reset-password") {
+    return (
+      <div style={authStyles.root}>
+        <form style={authStyles.card} onSubmit={(e) => { e.preventDefault(); onSignIn(); }}>
+          <div style={authStyles.brand}><Brand size={40} /></div>
+          <h1 style={authStyles.title}>Set new password</h1>
+          <div style={authStyles.subtitle}>Choose a strong password for your account.</div>
+          <div style={authStyles.field}>
+            <label style={authStyles.label}>New password</label>
+            <input style={authStyles.input} type="password" placeholder="At least 8 characters" autoFocus />
+          </div>
+          <div style={authStyles.field}>
+            <label style={authStyles.label}>Confirm new password</label>
+            <input style={authStyles.input} type="password" />
+          </div>
+          <button type="submit" style={authStyles.primary}>Set password</button>
+        </form>
+      </div>
+    );
+  }
 
   if (mode === "check-email") {
     return (
       <div style={authStyles.root}>
         <div style={authStyles.card}>
           <div style={authStyles.brand}><Brand size={40} /></div>
-          <div style={authStyles.checkIcon}><IconNote size={22} /></div>
+          <div style={authStyles.checkIcon}><IconMail size={22} /></div>
           <h1 style={authStyles.title}>Check your email</h1>
           <div style={authStyles.subtitle}>
             We sent a confirmation link to <strong style={{ color: "var(--jd-fg)" }}>{email}</strong>.
@@ -93,7 +114,7 @@ function AuthCard({ onSignIn }) {
       <div style={authStyles.root}>
         <div style={authStyles.card}>
           <div style={authStyles.brand}><Brand size={40} /></div>
-          <div style={authStyles.checkIcon}><IconNote size={22} /></div>
+          <div style={authStyles.checkIcon}><IconMail size={22} /></div>
           <h1 style={authStyles.title}>Reset link sent</h1>
           <div style={authStyles.subtitle}>
             If <strong style={{ color: "var(--jd-fg)" }}>{email}</strong> has an account, a reset link is on its way.

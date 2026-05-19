@@ -222,7 +222,21 @@ function Settings({ user, initialSection }) {
               ))}
               <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
                 <input style={{ ...settingsStyles.input, flex: 1 }} placeholder="invite by email" />
+                <select style={{ ...settingsStyles.input, width: "auto", cursor: "pointer" }}>
+                  <option value="member">Member</option>
+                  <option value="admin">Admin</option>
+                </select>
                 <button style={settingsStyles.btnPrimary}>Send invite</button>
+              </div>
+            </div>
+            <div style={{ ...settingsStyles.section, borderColor: "rgba(224,92,92,0.35)" }}>
+              <div style={{ ...settingsStyles.sectionTitle, color: "#e05c5c" }}>Danger zone</div>
+              <div style={{ ...settingsStyles.row, ...settingsStyles.rowLast }}>
+                <div>
+                  <div style={settingsStyles.rowMain}>Delete workspace</div>
+                  <div style={settingsStyles.rowMeta}>Permanently removes the workspace and all shared content. Members lose access immediately.</div>
+                </div>
+                <button style={settingsStyles.btnDanger}>Delete workspace</button>
               </div>
             </div>
           </>

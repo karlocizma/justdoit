@@ -120,6 +120,11 @@ function Segmented({ value, options, onChange }) {
 function TaskDetailPanel({ task, onClose, onToggle, onChange }) {
   const [recurring, setRecurring] = React.useState(!!task.recurring);
   const [reminder, setReminder] = React.useState(!!task.reminder);
+  const [subTasks, setSubTasks] = React.useState(task.subTasks || [
+    { id: "s1", title: "Draft outline", done: true },
+    { id: "s2", title: "Review with team", done: false },
+  ]);
+  const [newSubTask, setNewSubTask] = React.useState("");
 
   return (
     <>
@@ -208,6 +213,63 @@ function TaskDetailPanel({ task, onClose, onToggle, onChange }) {
                 />
               </>
             )}
+          </div>
+
+          <div style={taskPanelStyles.fieldGroup}>
+            <div style={taskPanelStyles.fieldLabel}>
+              Sub-tasks
+              <span style={{ marginLeft: 6, fontSize: 10, color: "var(--jd-fg-dim)", fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>
+                {subTasks.filter((s) => s.done).length}/{subTasks.length}
+              </span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 4 }}>
+              {subTasks.map((s) => (
+                <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ color: "var(--jd-fg-faint)", display: "flex", flexShrink: 0 }}>
+                    <IconCornerRight size={12} />
+                  </span>
+                  <div
+                    style={{ ...taskPanelStyles.checkbox(s.done), width: 16, height: 16, borderRadius: 4, flexShrink: 0 }}
+                    onClick={() => setSubTasks(subTasks.map((x) => x.id === s.id ? { ...x, done: !x.done } : x))}
+                  >
+                    {s.done && <IconCheck size={10} strokeWidth={3.5} style={{ color: "#0f1117" }} />}
+                  </div>
+                  <span style={{ fontSize: 13, color: s.done ? "var(--jd-fg-dim)" : "var(--jd-fg)", textDecoration: s.done ? "line-through" : "none", flex: 1 }}>
+                    {s.title}
+                  </span>
+                  <button
+                    style={{ background: "transparent", border: "none", color: "var(--jd-fg-faint)", cursor: "pointer", padding: 2, display: "flex", borderRadius: 4 }}
+                    onClick={() => setSubTasks(subTasks.filter((x) => x.id !== s.id))}
+                  >
+                    <IconClose size={12} />
+                  </button>
+                </div>
+              ))}
+              <form
+                style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!newSubTask.trim()) return;
+                  setSubTasks([...subTasks, { id: "s" + Date.now(), title: newSubTask.trim(), done: false }]);
+                  setNewSubTask("");
+                }}
+              >
+                <span style={{ color: "var(--jd-fg-faint)", display: "flex", flexShrink: 0 }}>
+                  <IconCornerRight size={12} />
+                </span>
+                <input
+                  style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 13, color: "var(--jd-fg)", fontFamily: "inherit" }}
+                  value={newSubTask}
+                  onChange={(e) => setNewSubTask(e.target.value)}
+                  placeholder="Add sub-task…"
+                />
+                {newSubTask && (
+                  <button type="submit" style={{ background: "transparent", border: "none", color: "var(--jd-accent)", cursor: "pointer", padding: 2, display: "flex", borderRadius: 4, fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>
+                    Add
+                  </button>
+                )}
+              </form>
+            </div>
           </div>
 
           <div style={taskPanelStyles.fieldGroup}>

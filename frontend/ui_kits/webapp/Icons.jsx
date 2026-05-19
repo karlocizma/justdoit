@@ -28,9 +28,13 @@ const IconArchive = ic(<><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="
 const IconTrash = ic(<><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></>);
 const IconFolder = ic(<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>);
 const IconChevronRight = ic(<polyline points="9 18 15 12 9 6"/>);
+const IconMail         = ic(<><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></>);
+const IconUsers        = ic(<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>);
+const IconCornerRight  = ic(<><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></>);
 
 Object.assign(window, {
   IconHome, IconNote, IconCheck, IconList, IconSearch, IconPin, IconSettings,
   IconRepeat, IconCalendar, IconChevronDown, IconPlus, IconMore, IconClose,
   IconClock, IconArchive, IconTrash, IconFolder, IconChevronRight,
+  IconMail, IconUsers, IconCornerRight,
 });
