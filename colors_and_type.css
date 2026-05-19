@@ -1,0 +1,241 @@
+/* JustDoIt — Colors & Type
+   Single source of truth for design tokens.
+   Dark theme is canonical; light theme is a mirror.
+
+   Source: design-brief.md + plan.html from karlocizma/justdoit
+*/
+
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/Inter.ttf") format("truetype-variations"),
+       url("fonts/Inter.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("fonts/SpaceGrotesk.ttf") format("truetype-variations"),
+       url("fonts/SpaceGrotesk.ttf") format("truetype");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("fonts/JetBrainsMono.ttf") format("truetype-variations"),
+       url("fonts/JetBrainsMono.ttf") format("truetype");
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* ---------- COLOR — surfaces ---------- */
+  --jd-bg:        #0f1117;   /* app background — near-black navy */
+  --jd-surface:   #1a1d27;   /* cards, sidebar, panels */
+  --jd-surface-2: #22263a;   /* hover, popovers, raised */
+  --jd-surface-3: #2e3350;   /* selected, pressed */
+  --jd-border:    #2e3350;   /* hairline borders on dark */
+  --jd-border-soft: #232839; /* even quieter divider */
+  --jd-code-bg:   #12141f;   /* code blocks, terminals */
+
+  /* ---------- COLOR — text ---------- */
+  --jd-fg:        #e8eaf6;   /* primary body text */
+  --jd-fg-muted:  #a4abd1;   /* secondary text */
+  --jd-fg-dim:    #7b82a8;   /* slate / tertiary, placeholders, timestamps */
+  --jd-fg-faint:  #5a6088;   /* disabled, watermark-y */
+
+  /* ---------- COLOR — accent (brand) ---------- */
+  --jd-accent:        #6c63ff;   /* primary — soft purple */
+  --jd-accent-hover:  #7d75ff;
+  --jd-accent-press:  #5a52e8;
+  --jd-accent-soft:   rgba(108, 99, 255, 0.14);   /* tinted bg for chips/states */
+  --jd-accent-2:      #48d1cc;   /* secondary — teal/cyan */
+  --jd-accent-2-soft: rgba(72, 209, 204, 0.14);
+
+  /* ---------- COLOR — semantic ---------- */
+  --jd-danger:       #e05c5c;
+  --jd-danger-soft:  rgba(224, 92, 92, 0.14);
+  --jd-success:      #4caf89;
+  --jd-success-soft: rgba(76, 175, 137, 0.14);
+  --jd-warn:         #f5a623;
+  --jd-warn-soft:    rgba(245, 166, 35, 0.14);
+  --jd-info:         var(--jd-accent-2);
+
+  /* ---------- COLOR — note swatches (user-pickable) ---------- */
+  --jd-note-slate:    #475569;
+  --jd-note-purple:   #8b7cff;
+  --jd-note-blue:     #5b9bff;
+  --jd-note-teal:     #48d1cc;
+  --jd-note-green:    #4caf89;
+  --jd-note-amber:    #f5a623;
+  --jd-note-rose:     #e05c8b;
+  --jd-note-red:      #e05c5c;
+
+  /* ---------- COLOR — priority dots ---------- */
+  --jd-priority-none:   var(--jd-fg-faint);
+  --jd-priority-low:    var(--jd-accent-2);
+  --jd-priority-medium: var(--jd-warn);
+  --jd-priority-high:   var(--jd-danger);
+
+  /* ---------- TYPE — families ---------- */
+  --jd-font-sans:    "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --jd-font-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --jd-font-display: "Space Grotesk", "Inter", system-ui, sans-serif; /* brand/logo only */
+
+  /* ---------- TYPE — scale ---------- */
+  --jd-fs-display: 40px;   /* hero/marketing */
+  --jd-fs-h1:      28px;   /* page titles, note titles */
+  --jd-fs-h2:      22px;   /* section heads */
+  --jd-fs-h3:      18px;
+  --jd-fs-body:    15px;   /* default body */
+  --jd-fs-small:   13px;   /* secondary copy, metadata */
+  --jd-fs-tiny:    12px;   /* labels, kbd, badge */
+
+  --jd-lh-tight:   1.25;
+  --jd-lh-snug:    1.4;
+  --jd-lh-normal:  1.55;
+  --jd-lh-relaxed: 1.7;    /* reading copy in notes */
+
+  --jd-fw-regular: 400;
+  --jd-fw-medium:  500;
+  --jd-fw-semibold:600;
+  --jd-fw-bold:    700;
+
+  /* ---------- SPACING ---------- */
+  --jd-space-1:  4px;
+  --jd-space-2:  8px;
+  --jd-space-3:  12px;
+  --jd-space-4:  16px;
+  --jd-space-5:  20px;
+  --jd-space-6:  24px;
+  --jd-space-8:  32px;
+  --jd-space-10: 40px;
+  --jd-space-12: 48px;
+
+  /* ---------- RADIUS ---------- */
+  --jd-radius-xs:  4px;
+  --jd-radius-sm:  6px;
+  --jd-radius-md:  8px;   /* buttons, inputs */
+  --jd-radius-lg:  12px;  /* cards (low) */
+  --jd-radius-xl:  16px;  /* cards (hero) */
+  --jd-radius-2xl: 20px;
+  --jd-radius-pill: 999px;
+
+  /* ---------- ELEVATION ---------- */
+  /* On dark, shadows are subtle. We lean on borders + slightly raised surface for hierarchy. */
+  --jd-shadow-sm: 0 1px 2px rgba(0,0,0,0.30);
+  --jd-shadow-md: 0 4px 12px rgba(0,0,0,0.35);
+  --jd-shadow-lg: 0 12px 32px rgba(0,0,0,0.45);
+  --jd-shadow-focus: 0 0 0 3px rgba(108, 99, 255, 0.35);
+
+  /* ---------- MOTION ---------- */
+  --jd-ease:     cubic-bezier(0.2, 0.8, 0.2, 1);
+  --jd-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --jd-dur-fast: 120ms;
+  --jd-dur-base: 200ms;
+  --jd-dur-slow: 360ms;
+}
+
+/* Optional light theme — same hierarchy, inverted */
+[data-theme="light"] {
+  --jd-bg:        #f7f8fc;
+  --jd-surface:   #ffffff;
+  --jd-surface-2: #f1f2f8;
+  --jd-surface-3: #e6e8f2;
+  --jd-border:    #e2e4ee;
+  --jd-border-soft: #ecedf4;
+  --jd-code-bg:   #f1f2f8;
+
+  --jd-fg:        #1a1d27;
+  --jd-fg-muted:  #4a5170;
+  --jd-fg-dim:    #7b82a8;
+  --jd-fg-faint:  #9ea4c1;
+
+  --jd-accent-soft:   rgba(108, 99, 255, 0.10);
+  --jd-accent-2-soft: rgba(72, 209, 204, 0.12);
+
+  --jd-shadow-sm: 0 1px 2px rgba(15, 17, 23, 0.06);
+  --jd-shadow-md: 0 4px 16px rgba(15, 17, 23, 0.08);
+  --jd-shadow-lg: 0 16px 40px rgba(15, 17, 23, 0.12);
+}
+
+/* ---------- SEMANTIC ELEMENTS ---------- */
+/* Drop this stylesheet into a page and basic elements look "right" by default. */
+
+html, body {
+  background: var(--jd-bg);
+  color: var(--jd-fg);
+  font-family: var(--jd-font-sans);
+  font-size: var(--jd-fs-body);
+  line-height: var(--jd-lh-normal);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1 {
+  font-size: var(--jd-fs-h1);
+  font-weight: var(--jd-fw-bold);
+  line-height: var(--jd-lh-tight);
+  letter-spacing: -0.01em;
+}
+h2 {
+  font-size: var(--jd-fs-h2);
+  font-weight: var(--jd-fw-semibold);
+  line-height: var(--jd-lh-snug);
+  letter-spacing: -0.005em;
+}
+h3 {
+  font-size: var(--jd-fs-h3);
+  font-weight: var(--jd-fw-semibold);
+  line-height: var(--jd-lh-snug);
+}
+
+p {
+  font-size: var(--jd-fs-body);
+  line-height: var(--jd-lh-relaxed);
+  color: var(--jd-fg);
+}
+
+small, .jd-small {
+  font-size: var(--jd-fs-small);
+  color: var(--jd-fg-muted);
+}
+
+code, kbd, pre, .jd-mono {
+  font-family: var(--jd-font-mono);
+  font-size: 0.92em;
+}
+
+kbd {
+  background: var(--jd-surface-2);
+  border: 1px solid var(--jd-border);
+  border-bottom-width: 2px;
+  border-radius: var(--jd-radius-xs);
+  padding: 1px 6px;
+  font-size: var(--jd-fs-tiny);
+  color: var(--jd-fg-muted);
+}
+
+code {
+  background: var(--jd-code-bg);
+  border: 1px solid var(--jd-border-soft);
+  border-radius: var(--jd-radius-xs);
+  padding: 1px 6px;
+  color: var(--jd-accent-2);
+}
+
+a {
+  color: var(--jd-accent);
+  text-decoration: none;
+}
+a:hover { color: var(--jd-accent-hover); text-decoration: underline; }
+
+::selection { background: var(--jd-accent-soft); color: var(--jd-fg); }
+
+/* Focus ring — keyboard only */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--jd-shadow-focus);
+  border-radius: var(--jd-radius-sm);
+}

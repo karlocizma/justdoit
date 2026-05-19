@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="JustDoIt monogram">
+  <defs>
+    <linearGradient id="jd-mark-grad" x1="0" y1="0" x2="1" y2="1" gradientTransform="rotate(135 .5 .5)">
+      <stop offset="0%" stop-color="#6c63ff"></stop>
+      <stop offset="100%" stop-color="#48d1cc"></stop>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="64" height="64" rx="14" fill="url(#jd-mark-grad)"></rect>
+  <path d="M38 14h-6v26c0 5-2 7-6 7-3 0-5-1-6-3l-4 5c2 3 6 5 11 5 8 0 13-5 13-13V14z" fill="#0f1117"></path>
+  <circle cx="44" cy="48" r="4" fill="#0f1117"></circle>
+</svg>

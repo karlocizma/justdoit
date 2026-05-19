@@ -1,0 +1,52 @@
+/* Shared preview-card base. Each card file imports this then renders one concept. */
+@import url("../colors_and_type.css");
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--jd-bg);
+  color: var(--jd-fg);
+  font-family: var(--jd-font-sans);
+}
+
+.card {
+  padding: 20px 24px;
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  justify-content: center;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--jd-fg-dim);
+}
+
+.row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.col { display: flex; flex-direction: column; gap: 6px; }
+
+.swatch {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.swatch .chip {
+  width: 100%;
+  height: 48px;
+  border-radius: var(--jd-radius-md);
+  border: 1px solid var(--jd-border);
+}
+.swatch .name { font-size: 12px; font-weight: 600; color: var(--jd-fg); }
+.swatch .hex  { font-family: var(--jd-font-mono); font-size: 11px; color: var(--jd-fg-dim); }
+
+.grid {
+  display: grid;
+  gap: 10px;
+}

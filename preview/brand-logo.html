@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Logo</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  .logo-card {
+    padding: 22px 28px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 28px;
+    align-items: center;
+  }
+  .lockup {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .lockup .mark {
+    width: 56px; height: 56px; border-radius: 14px;
+    background: linear-gradient(135deg, #6c63ff, #48d1cc);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .lockup .mark svg { display: block; }
+  .lockup .wm {
+    font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 40px;
+    letter-spacing: -2px;
+    line-height: 1;
+    color: var(--jd-fg);
+    position: relative;
+  }
+  .lockup .wm .tittle {
+    position: absolute;
+    top: 5px;
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #6c63ff;
+  }
+  .variants {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-end;
+  }
+  .variants .row { display: flex; align-items: center; gap: 8px; }
+  .variants .small {
+    font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.9px;
+    color: var(--jd-fg);
+  }
+  .variants .small .tittle {
+    display: inline-block;
+    width: 3.5px; height: 3.5px; border-radius: 50%;
+    background: #6c63ff;
+    vertical-align: 8px;
+    margin: 0 -0.5px;
+  }
+  .variants .mini {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: linear-gradient(135deg, #6c63ff, #48d1cc);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .variants .label {
+    font-size: 10px; color: var(--jd-fg-dim);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    font-weight: 600;
+    margin-right: auto;
+  }
+  .on-light {
+    background: var(--jd-fg);
+    border-radius: 10px;
+    padding: 4px 10px;
+  }
+  .on-light .wm-light {
+    font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: -0.8px;
+    color: #0f1117;
+  }
+</style>
+</head>
+<body>
+<div class="card logo-card">
+
+  <!-- Primary lockup -->
+  <div class="lockup">
+    <div class="mark">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <path d="M22 8v13c0 4-2.5 6.5-6.5 6.5-3 0-5.2-1.2-6.3-2.9"
+              stroke="#0f1117" stroke-width="4"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="wm">justdoit</div>
+  </div>
+
+  <!-- Variants -->
+  <div class="variants">
+    <div class="row">
+      <span class="label">small</span>
+      <div class="mini">
+        <svg width="14" height="14" viewBox="0 0 32 32" fill="none">
+          <path d="M22 8v13c0 4-2.5 6.5-6.5 6.5-3 0-5.2-1.2-6.3-2.9"
+                stroke="#0f1117" stroke-width="4.5"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="small">justdoit</span>
+    </div>
+    <div class="row">
+      <span class="label">on light</span>
+      <div class="on-light">
+        <span class="wm-light">justdoit</span>
+      </div>
+    </div>
+    <div class="row">
+      <span class="label">mark</span>
+      <div class="mini" style="width:32px;height:32px;border-radius:8px;">
+        <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+          <path d="M22 8v13c0 4-2.5 6.5-6.5 6.5-3 0-5.2-1.2-6.3-2.9"
+                stroke="#0f1117" stroke-width="4"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
