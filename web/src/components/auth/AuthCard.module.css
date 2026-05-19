@@ -1,0 +1,159 @@
+.card {
+  width: 380px;
+  background: var(--jd-surface);
+  border: 1px solid var(--jd-border);
+  border-radius: 16px;
+  padding: 32px 32px 28px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.brand {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--jd-fg);
+  text-align: center;
+  letter-spacing: -0.01em;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--jd-fg-dim);
+  text-align: center;
+  margin-top: -8px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--jd-fg-muted);
+}
+
+.input {
+  background: var(--jd-bg);
+  border: 1px solid var(--jd-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--jd-fg);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 150ms, box-shadow 150ms;
+  width: 100%;
+}
+
+.input:focus {
+  border-color: var(--jd-accent);
+  box-shadow: 0 0 0 3px var(--jd-accent-soft);
+}
+
+.forgotBtn {
+  font-size: 12px;
+  color: var(--jd-fg-dim);
+  background: transparent;
+  border: none;
+  padding: 0;
+  align-self: flex-end;
+  cursor: pointer;
+}
+
+.forgotBtn:hover { color: var(--jd-fg); }
+
+.primaryBtn {
+  background: var(--jd-accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms;
+}
+
+.primaryBtn:hover { background: var(--jd-accent-hover); }
+.primaryBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--jd-fg-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 4px 0;
+}
+
+.dividerLine { flex: 1; height: 1px; background: var(--jd-border); }
+
+.oauthBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: transparent;
+  color: var(--jd-fg);
+  border: 1px solid var(--jd-border);
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 150ms, border-color 150ms;
+}
+
+.oauthBtn:hover {
+  background: var(--jd-surface-2);
+  border-color: var(--jd-border-soft);
+}
+
+.footer {
+  text-align: center;
+  font-size: 13px;
+  color: var(--jd-fg-dim);
+  margin-top: 8px;
+}
+
+.link {
+  color: var(--jd-accent);
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.error {
+  background: rgba(224,92,92,0.12);
+  border: 1px solid rgba(224,92,92,0.3);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--jd-danger);
+}
+
+.checkIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(72,209,204,0.14);
+  color: var(--jd-info);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 4px;
+}

@@ -1,0 +1,191 @@
+.root {
+  padding: 28px 32px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.hello {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--jd-fg);
+  letter-spacing: -0.01em;
+}
+
+.date {
+  font-size: 14px;
+  color: var(--jd-fg-dim);
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 28px;
+  margin-bottom: 12px;
+}
+
+.h2 {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--jd-fg);
+}
+
+.countMuted {
+  font-size: 12px;
+  color: var(--jd-fg-dim);
+}
+
+.countMuted.danger { color: #e05c5c; }
+
+.noteGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.noteCard {
+  background: var(--jd-surface);
+  border: 1px solid var(--jd-border);
+  border-radius: 10px;
+  padding: 14px;
+  cursor: pointer;
+  transition: border-color 150ms, box-shadow 150ms;
+  min-height: 80px;
+}
+
+.noteCard:hover {
+  border-color: var(--jd-accent);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+}
+
+.noteTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--jd-fg);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.noteSnippet {
+  font-size: 12px;
+  color: var(--jd-fg-dim);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.noteTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.tag {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: var(--jd-accent-soft);
+  color: var(--jd-accent);
+}
+
+.taskCard {
+  background: var(--jd-surface);
+  border: 1px solid var(--jd-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.taskListHead {
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--jd-fg-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--jd-surface-2);
+  border-bottom: 1px solid var(--jd-border-soft);
+}
+
+.overdueHead {
+  color: #e05c5c;
+  background: rgba(224,92,92,0.08);
+}
+
+.emptyHint {
+  padding: 20px 16px;
+  font-size: 13px;
+  color: var(--jd-fg-dim);
+  text-align: center;
+}
+
+.taskRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--jd-border-soft);
+}
+
+.taskRow:last-child { border-bottom: none; }
+
+.checkbox {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--jd-border);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: transparent;
+  transition: border-color 150ms, background 150ms, color 150ms;
+}
+
+.checkbox:hover {
+  border-color: var(--jd-accent);
+  color: var(--jd-accent);
+}
+
+.taskInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.taskTitle {
+  font-size: 14px;
+  color: var(--jd-fg);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.taskTitle:hover { color: var(--jd-accent); }
+
+.taskList {
+  font-size: 11px;
+}
+
+.priority {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+  flex-shrink: 0;
+}

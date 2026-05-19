@@ -1,0 +1,147 @@
+.root {
+  padding: 28px 32px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--jd-fg);
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+
+.query { color: var(--jd-accent); }
+
+.count {
+  font-size: 13px;
+  color: var(--jd-fg-dim);
+  margin-bottom: 24px;
+}
+
+.hint {
+  font-size: 14px;
+  color: var(--jd-fg-dim);
+  margin-top: 16px;
+}
+
+.empty {
+  text-align: center;
+  padding: 60px 0;
+  color: var(--jd-fg-dim);
+}
+
+.emptyIcon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.section { margin-bottom: 32px; }
+
+.sectionHead {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--jd-fg-dim);
+  margin-bottom: 10px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--jd-surface);
+  border: 1px solid var(--jd-border);
+  text-decoration: none;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+
+.item:hover {
+  border-color: var(--jd-accent);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.item.itemDone { opacity: 0.6; }
+
+.noteColor {
+  width: 3px;
+  height: 40px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.taskCheck {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--jd-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: transparent;
+}
+
+.taskCheck.taskChecked {
+  background: var(--jd-accent);
+  border-color: var(--jd-accent);
+  color: #fff;
+}
+
+.itemBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.itemTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--jd-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemSnippet {
+  font-size: 12px;
+  color: var(--jd-fg-dim);
+  margin-top: 2px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.taskList {
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.relTime {
+  font-size: 11px;
+  color: var(--jd-fg-dim);
+  flex-shrink: 0;
+}
+
+.due {
+  font-size: 11px;
+  color: var(--jd-fg-dim);
+  flex-shrink: 0;
+}
+
+.mark {
+  background: rgba(108,99,255,0.25);
+  color: var(--jd-accent);
+  border-radius: 2px;
+  padding: 0 1px;
+}

@@ -1,0 +1,236 @@
+.root {
+  width: 260px;
+  background: var(--jd-surface);
+  border-right: 1px solid var(--jd-border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  height: 100vh;
+  overflow: hidden;
+  position: sticky;
+  top: 0;
+}
+
+.brand {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--jd-border-soft);
+  flex-shrink: 0;
+}
+
+.wsSwitcher {
+  margin: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--jd-surface-2);
+  border: 1px solid var(--jd-border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: background 150ms;
+  flex-shrink: 0;
+}
+
+.wsSwitcher:hover { background: var(--jd-surface-3); }
+
+.wsAvatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #6c63ff, #48d1cc);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0f1117;
+  font-weight: 700;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.wsName {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--jd-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wsChevron {
+  color: var(--jd-fg-dim);
+  display: flex;
+  flex-shrink: 0;
+}
+
+.section {
+  padding: 8px 12px 4px 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--jd-fg-dim);
+  flex-shrink: 0;
+}
+
+.navList {
+  display: flex;
+  flex-direction: column;
+  padding: 0 8px;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  margin: 1px 0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--jd-fg-muted);
+  background: transparent;
+  cursor: pointer;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  text-decoration: none;
+  transition: background 120ms, color 120ms;
+}
+
+.navItem:hover {
+  background: var(--jd-surface-2);
+  color: var(--jd-fg);
+}
+
+.navItem.active {
+  color: var(--jd-fg);
+  background: var(--jd-accent-soft);
+}
+
+.navIcon {
+  color: var(--jd-fg-dim);
+  flex-shrink: 0;
+  display: flex;
+}
+
+.navItem.active .navIcon { color: var(--jd-accent); }
+
+.navLabel { flex: 1; }
+
+.navCount {
+  font-size: 11px;
+  color: var(--jd-fg-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.navColor {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.scrollLists {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+
+.footer {
+  margin-top: auto;
+  padding: 12px;
+  border-top: 1px solid var(--jd-border-soft);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.footerAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #6c63ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0f1117;
+  font-weight: 700;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.footerInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.footerName {
+  font-size: 13px;
+  color: var(--jd-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.footerEmail {
+  font-size: 11px;
+  color: var(--jd-fg-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.footerChevron {
+  color: var(--jd-fg-dim);
+  display: flex;
+  flex-shrink: 0;
+}
+
+.menu {
+  position: fixed;
+  z-index: 200;
+  background: var(--jd-surface);
+  border: 1px solid var(--jd-border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  padding: 6px;
+  min-width: 180px;
+}
+
+.menuMeta {
+  padding: 6px 10px;
+  font-size: 11px;
+  color: var(--jd-fg-dim);
+  border-bottom: 1px solid var(--jd-border-soft);
+  margin-bottom: 4px;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--jd-fg-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background 100ms;
+}
+
+.menuItem:hover { background: var(--jd-surface-2); color: var(--jd-fg); }
+.menuItem.danger { color: var(--jd-danger); }
+.menuItem.danger:hover { background: rgba(224,92,92,0.12); }
