@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JustDoIt — Backend Plan (Supabase)</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3350;
+      --accent: #6c63ff;
+      --accent2: #48d1cc;
+      --warn: #f5a623;
+      --danger: #e05c5c;
+      --success: #4caf89;
+      --text: #e8eaf6;
+      --muted: #7b82a8;
+      --code-bg: #12141f;
+      --supa: #3ecf8e;
+      --trigger: #a78bfa;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      padding: 2rem 1rem;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+
+    .hero {
+      text-align: center;
+      padding: 3rem 0 2rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 3rem;
+    }
+    .hero h1 {
+      font-size: 3.2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -1px;
+    }
+    .hero .tagline { color: var(--muted); font-size: 1.1rem; margin-top: 0.5rem; }
+    .badge {
+      display: inline-block;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin: 0.25rem;
+    }
+    .badge.supa   { border-color: var(--supa);    color: var(--supa); }
+    .badge.trigger{ border-color: var(--trigger);  color: var(--trigger); }
+    .badge.accent { border-color: var(--accent);   color: var(--accent); }
+    .badge.success{ border-color: var(--success);  color: var(--success); }
+    .badge.warn   { border-color: var(--warn);     color: var(--warn); }
+
+    section { margin-bottom: 3rem; }
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+      border-left: 4px solid var(--accent);
+      padding-left: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--accent2);
+      margin-bottom: 0.5rem;
+      margin-top: 1.25rem;
+    }
+    p { color: var(--muted); margin-bottom: 0.75rem; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .card.supa-card    { border-color: #1f4535; }
+    .card.trigger-card { border-color: #3b2e6e; }
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+    .card h3 { margin-top: 0; }
+
+    .feature-list {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 0.5rem;
+    }
+    .feature-list li {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.9rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .feature-list li::before { content: "✓"; color: var(--success); font-weight: 700; }
+    .feature-list li.phase2::before { content: "◎"; color: var(--warn); }
+    .feature-list li.phase3::before { content: "○"; color: var(--muted); }
+
+    .stack-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem; }
+    .stack-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.4rem 1rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .stack-item span { color: var(--muted); font-weight: 400; margin-left: 0.25rem; }
+    .stack-item.supa    { border-color: var(--supa);    color: var(--supa); }
+    .stack-item.trigger { border-color: var(--trigger); color: var(--trigger); }
+
+    .schema-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin-bottom: 1.5rem;
+    }
+    .schema-table th {
+      background: var(--surface2);
+      color: var(--accent2);
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 2px solid var(--border);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .schema-table td {
+      padding: 0.45rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+    .schema-table tr:hover td { background: var(--surface2); }
+    .pk       { color: var(--warn);    font-weight: 700; font-size: 0.75rem; }
+    .fk       { color: var(--accent);  font-weight: 700; font-size: 0.75rem; }
+    .type     { color: var(--muted);   font-family: monospace; font-size: 0.82rem; }
+    .nullable { color: var(--muted);   font-size: 0.75rem; font-style: italic; }
+    .rls      { color: var(--supa);    font-size: 0.75rem; font-weight: 600; }
+
+    .endpoint {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6rem 1rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      font-size: 0.88rem;
+    }
+    .endpoint.edge { border-color: #3b2e6e; }
+    .method {
+      font-family: monospace;
+      font-weight: 800;
+      font-size: 0.78rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      min-width: 52px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .GET    { background: #1a3a2e; color: #4caf89; }
+    .POST   { background: #1a2e3a; color: #48d1cc; }
+    .PATCH  { background: #2e2a1a; color: #f5a623; }
+    .DELETE { background: #2e1a1a; color: #e05c5c; }
+    .AUTO   { background: #1f3035; color: var(--supa); }
+    .EDGE   { background: #2e1f5e; color: var(--trigger); }
+    .endpoint-path { font-family: monospace; color: var(--text); }
+    .endpoint-desc { color: var(--muted); font-size: 0.82rem; margin-top: 0.1rem; }
+    .source-tag {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      margin-left: 0.4rem;
+      font-weight: 600;
+    }
+    .src-postgrest { background: #1f3530; color: var(--supa); }
+    .src-edge      { background: #2a2040; color: var(--trigger); }
+    .src-auth      { background: #2a3040; color: var(--accent2); }
+
+    .arch {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      font-family: monospace;
+      font-size: 0.82rem;
+      color: var(--text);
+      line-height: 1.8;
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    .rls-block {
+      background: var(--code-bg);
+      border: 1px solid #1f4535;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      font-family: monospace;
+      font-size: 0.82rem;
+      color: var(--text);
+      margin-bottom: 1rem;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .rls-comment { color: var(--muted); }
+    .rls-kw      { color: var(--accent2); }
+    .rls-val     { color: var(--supa); }
+
+    .trigger-block {
+      background: var(--code-bg);
+      border: 1px solid #3b2e6e;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      font-family: monospace;
+      font-size: 0.82rem;
+      color: var(--text);
+      margin-bottom: 1rem;
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    .milestone {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      position: relative;
+    }
+    .milestone::before {
+      content: '';
+      position: absolute;
+      left: 14px;
+      top: 32px;
+      bottom: -16px;
+      width: 2px;
+      background: var(--border);
+    }
+    .milestone:last-child::before { display: none; }
+    .milestone-num {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      z-index: 1;
+    }
+    .milestone-num.future { background: var(--surface2); color: var(--muted); border: 2px solid var(--border); }
+    .milestone-body h3 { color: var(--text); margin-top: 0.25rem; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+    .callout {
+      background: #1a1d27;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--supa);
+      border-radius: 0 8px 8px 0;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .callout strong { color: var(--text); }
+    .callout.trigger-callout { border-left-color: var(--trigger); }
+
+    code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.1rem 0.4rem;
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: var(--accent2);
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.82rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1>JustDoIt</h1>
+    <p class="tagline">Notes &amp; Tasks — Backend Architecture Plan (Supabase Edition)</p>
+    <div style="margin-top:1rem;">
+      <span class="badge accent">v2.0 Plan</span>
+      <span class="badge supa">Supabase</span>
+      <span class="badge trigger">Trigger.dev v3</span>
+      <span class="badge">PostgREST · Edge Functions</span>
+      <span class="badge success">RLS Auth</span>
+    </div>
+  </div>
+
+  <!-- Why Supabase -->
+  <section>
+    <h2>Why Supabase</h2>
+    <div class="card-grid">
+      <div class="card supa-card">
+        <h3 style="color:var(--supa)">Auth — free</h3>
+        <p>JWT, refresh tokens, email verification, password reset, OAuth — all handled. Zero custom auth code.</p>
+      </div>
+      <div class="card supa-card">
+        <h3 style="color:var(--supa)">API — auto-generated</h3>
+        <p>PostgREST turns every table into a full REST API instantly. CRUD endpoints need no server code.</p>
+      </div>
+      <div class="card supa-card">
+        <h3 style="color:var(--supa)">Realtime — built-in</h3>
+        <p>PostgreSQL replication → WebSocket push. Phase 3 real-time sync is essentially free.</p>
+      </div>
+      <div class="card supa-card">
+        <h3 style="color:var(--supa)">Storage — included</h3>
+        <p>S3-compatible file storage for Phase 2 note attachments. No extra infra.</p>
+      </div>
+      <div class="card trigger-card">
+        <h3 style="color:var(--trigger)">Background jobs — Trigger.dev</h3>
+        <p>Open-source, TypeScript-native, self-hostable. Handles reminders, recurring tasks, emails — with delay, retry, and observability built in.</p>
+      </div>
+      <div class="card">
+        <h3>Local dev — Supabase CLI</h3>
+        <p>One command spins up a full local Supabase stack (Postgres, Auth, Storage, Edge Functions) via Docker.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section>
+    <h2>Feature Scope</h2>
+    <p>Legend: <strong style="color:var(--success)">✓ Phase 1</strong> &nbsp; <strong style="color:var(--warn)">◎ Phase 2</strong> &nbsp; <strong style="color:var(--muted)">○ Phase 3</strong></p>
+    <ul class="feature-list" style="margin-top:1rem;">
+      <li>User auth (JWT + refresh)</li>
+      <li>Email verification</li>
+      <li>Password reset flow</li>
+      <li>OAuth (Google, GitHub)</li>
+      <li>Create / edit notes</li>
+      <li>Markdown content</li>
+      <li>Pin &amp; archive notes</li>
+      <li>Note tags</li>
+      <li>Full-text search</li>
+      <li>Create to-do lists</li>
+      <li>Task CRUD</li>
+      <li>Task due dates</li>
+      <li>Task priorities</li>
+      <li>Task completion toggle</li>
+      <li>Sub-tasks (nested)</li>
+      <li>Drag-order reordering</li>
+      <li class="phase2">Recurring tasks</li>
+      <li class="phase2">File attachments</li>
+      <li class="phase2">Labels / colours</li>
+      <li class="phase2">Email reminders</li>
+      <li class="phase2">Activity timeline</li>
+      <li class="phase2">Trash &amp; restore</li>
+      <li class="phase2">Export (JSON / MD)</li>
+      <li class="phase3">Shared workspaces</li>
+      <li class="phase3">Real-time sync (WS)</li>
+      <li class="phase3">Mobile push notifications</li>
+      <li class="phase3">Integrations (Webhooks)</li>
+    </ul>
+  </section>
+
+  <!-- Tech Stack -->
+  <section>
+    <h2>Tech Stack</h2>
+    <div class="card">
+      <h3>Supabase Platform</h3>
+      <div class="stack-row">
+        <div class="stack-item supa">Supabase Auth <span style="color:#2a7a56">passwords + OAuth + magic links</span></div>
+        <div class="stack-item supa">PostgREST <span style="color:#2a7a56">auto-generated CRUD API</span></div>
+        <div class="stack-item supa">Supabase Realtime <span style="color:#2a7a56">live updates via WS</span></div>
+        <div class="stack-item supa">Supabase Storage <span style="color:#2a7a56">file attachments</span></div>
+        <div class="stack-item supa">Edge Functions <span style="color:#2a7a56">Deno · custom logic</span></div>
+      </div>
+      <h3>Database</h3>
+      <div class="stack-row">
+        <div class="stack-item">PostgreSQL 15 <span>managed by Supabase</span></div>
+        <div class="stack-item">Row Level Security <span>per-user data isolation</span></div>
+        <div class="stack-item">Drizzle ORM <span>schema + migrations only</span></div>
+        <div class="stack-item">pg_trgm + tsvector <span>full-text search</span></div>
+      </div>
+      <h3>Background Jobs</h3>
+      <div class="stack-row">
+        <div class="stack-item trigger">Trigger.dev v3 <span style="color:#5b4aaa">open-source job orchestration</span></div>
+        <div class="stack-item">Resend <span>transactional email</span></div>
+      </div>
+      <h3>Client SDK &amp; Frontend Integration</h3>
+      <div class="stack-row">
+        <div class="stack-item">supabase-js v2 <span>official client</span></div>
+        <div class="stack-item">TypeScript <span>strict mode</span></div>
+        <div class="stack-item">Zod <span>Edge Function validation</span></div>
+      </div>
+      <h3>Local Dev &amp; CI</h3>
+      <div class="stack-row">
+        <div class="stack-item">Supabase CLI <span>local stack</span></div>
+        <div class="stack-item">Vitest <span>unit + integration</span></div>
+        <div class="stack-item">GitHub Actions <span>CI / deploy</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture -->
+  <section>
+    <h2>Architecture</h2>
+    <div class="arch">
+┌───────────────────────────────────────────────────────────────────┐
+│                         CLIENT  (SPA)                             │
+│            supabase-js v2  ·  React / Vue / Svelte                │
+└──────┬──────────────┬─────────────┬──────────────┬───────────────┘
+       │ Auth         │ REST        │ Realtime     │ Storage
+       ▼              ▼             ▼              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                        SUPABASE                                 │
+│                                                                 │
+│  ┌──────────┐  ┌────────────┐  ┌───────────┐  ┌───────────┐   │
+│  │  Auth    │  │ PostgREST  │  │ Realtime  │  │  Storage  │   │
+│  │  (JWT)   │  │ (auto API) │  │  (WS/CDC) │  │  (S3)     │   │
+│  └──────────┘  └──────┬─────┘  └─────┬─────┘  └───────────┘   │
+│                        │              │                          │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │               PostgreSQL 15  (+ RLS)                      │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                 │
+│  ┌────────────────────────────────────────────────────────┐     │
+│  │       Edge Functions  (Deno · TypeScript)              │     │
+│  │  /dashboard  ·  /search  ·  /export  ·  webhooks       │     │
+│  └────────────────────────────────────────────────────────┘     │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │ DB Webhooks / HTTP triggers
+                               ▼
+┌───────────────────────────────────────────────────────────────┐
+│                    TRIGGER.DEV  v3                             │
+│                                                               │
+│  ┌────────────────┐  ┌──────────────┐  ┌──────────────────┐  │
+│  │ reminder.job   │  │ recurring    │  │  email.send      │  │
+│  │ (scheduled)    │  │ tasks.job    │  │  (Resend)        │  │
+│  └────────────────┘  └──────────────┘  └──────────────────┘  │
+└───────────────────────────────────────────────────────────────┘
+    </div>
+    <div class="callout" style="margin-top:1rem;">
+      <strong>PostgREST handles ~80% of the API surface automatically.</strong> Edge Functions only exist for logic that PostgREST can't express: aggregated dashboard data, global full-text search across multiple tables, file export, and incoming job webhooks.
+    </div>
+  </section>
+
+  <!-- Background Jobs: Trigger.dev -->
+  <section>
+    <h2>Background Jobs — Trigger.dev v3</h2>
+    <div class="callout trigger-callout">
+      <strong>Why Trigger.dev v3 over alternatives:</strong> It is open-source (MIT), TypeScript-native, self-hostable on your own infra later, has a native Supabase integration (DB webhook → job trigger), and supports <code>wait.for</code> delays — meaning a reminder can literally <em>pause</em> inside the job until the exact moment it should fire, without a polling loop. Inngest is the closest alternative but is closed-source. <code>pg_cron</code> is fine for simple DB maintenance but too limited for retries, fan-out, and complex email logic.
+    </div>
+    <div class="two-col">
+      <div>
+        <h3>Jobs — Phase 1</h3>
+        <div class="card trigger-card">
+          <strong style="color:var(--trigger)">reminder.schedule</strong>
+          <p style="margin-top:0.4rem;">Triggered when a reminder row is inserted. Uses <code>wait.until(remind_at)</code> then sends email/push via Resend. Cancellable by job ID.</p>
+        </div>
+        <div class="card trigger-card">
+          <strong style="color:var(--trigger)">email.verification</strong>
+          <p style="margin-top:0.4rem;">Triggered on new user signup (Supabase Auth webhook). Sends branded verification email.</p>
+        </div>
+        <div class="card trigger-card">
+          <strong style="color:var(--trigger)">email.passwordReset</strong>
+          <p style="margin-top:0.4rem;">Triggered by Supabase Auth password-reset hook. Sends custom-styled reset email.</p>
+        </div>
+      </div>
+      <div>
+        <h3>Jobs — Phase 2</h3>
+        <div class="card trigger-card">
+          <strong style="color:var(--trigger)">task.recur</strong>
+          <p style="margin-top:0.4rem;">Cron job that runs daily. Queries tasks with <code>recurrence IS NOT NULL</code> and completed, generates the next occurrence, inserts new task row.</p>
+        </div>
+        <div class="card trigger-card">
+          <strong style="color:var(--trigger)">digest.daily</strong>
+          <p style="margin-top:0.4rem;">Optional opt-in daily digest email: today's tasks + overdue summary. Scheduled per user timezone.</p>
+        </div>
+        <div class="card trigger-card">
+          <strong style="color:var(--trigger)">export.generate</strong>
+          <p style="margin-top:0.4rem;">Long-running job triggered by user export request. Builds ZIP of Markdown notes + JSON tasks, uploads to Supabase Storage, sends download link.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Example job — reminder</h3>
+    <div class="trigger-block"><span style="color:var(--muted)">// jobs/reminder.ts</span>
+<span style="color:var(--accent2)">import</span> { task, wait } <span style="color:var(--accent2)">from</span> <span style="color:var(--supa)">"@trigger.dev/sdk/v3"</span>;
+<span style="color:var(--accent2)">import</span> { resend } <span style="color:var(--accent2)">from</span> <span style="color:var(--supa)">"../lib/email"</span>;
+
+<span style="color:var(--accent2)">export const</span> reminderJob = task({
+  id: <span style="color:var(--supa)">"reminder.schedule"</span>,
+  run: <span style="color:var(--accent2)">async</span> (payload: { reminderId: string; userId: string; remindAt: string; message: string; channel: string }) => {
+    <span style="color:var(--muted)">// pauses execution — no polling, no cron tick overhead</span>
+    <span style="color:var(--accent2)">await</span> wait.until({ date: <span style="color:var(--accent2)">new</span> Date(payload.remindAt) });
+
+    <span style="color:var(--accent2)">if</span> (payload.channel === <span style="color:var(--supa)">"email"</span>) {
+      <span style="color:var(--accent2)">await</span> resend.emails.send({ ... });
+    }
+    <span style="color:var(--muted)">// mark reminder as sent in DB</span>
+    <span style="color:var(--accent2)">await</span> supabase.from(<span style="color:var(--supa)">"reminders"</span>).update({ is_sent: <span style="color:var(--accent2)">true</span> }).eq(<span style="color:var(--supa)">"id"</span>, payload.reminderId);
+  },
+});</div>
+  </section>
+
+  <!-- Row Level Security -->
+  <section>
+    <h2>Row Level Security (RLS)</h2>
+    <p>RLS replaces all custom auth middleware. Every table is locked to the authenticated user via <code>auth.uid()</code>. No user can ever read or modify another user's data — enforced at the database level.</p>
+    <div class="rls-block"><span class="rls-comment">-- notes: users can only see and modify their own rows</span>
+<span class="rls-kw">ALTER TABLE</span> notes <span class="rls-kw">ENABLE ROW LEVEL SECURITY</span>;
+
+<span class="rls-kw">CREATE POLICY</span> <span class="rls-val">"notes: owner full access"</span>
+  <span class="rls-kw">ON</span> notes <span class="rls-kw">FOR ALL</span>
+  <span class="rls-kw">USING</span>      (user_id = auth.uid())
+  <span class="rls-kw">WITH CHECK</span> (user_id = auth.uid());
+
+<span class="rls-comment">-- tasks: access via the parent list's ownership</span>
+<span class="rls-kw">CREATE POLICY</span> <span class="rls-val">"tasks: owner via list"</span>
+  <span class="rls-kw">ON</span> tasks <span class="rls-kw">FOR ALL</span>
+  <span class="rls-kw">USING</span> (
+    list_id <span class="rls-kw">IN</span> (
+      <span class="rls-kw">SELECT</span> id <span class="rls-kw">FROM</span> todo_lists <span class="rls-kw">WHERE</span> user_id = auth.uid()
+    )
+  );</div>
+    <div class="callout">
+      <strong>Tip:</strong> The Supabase client sends the user's JWT automatically. PostgREST reads it, sets <code>auth.uid()</code>, and RLS does the rest. No auth headers to validate manually in application code.
+    </div>
+  </section>
+
+  <!-- Database Schema -->
+  <section>
+    <h2>Database Schema</h2>
+    <p>All tables live in the <code>public</code> schema. Auth data is in Supabase's managed <code>auth.users</code> — the <code>profiles</code> table extends it via a trigger.</p>
+
+    <h3>profiles  <small style="color:var(--muted);font-size:0.8rem;">(extends auth.users 1:1)</small></h3>
+    <table class="schema-table">
+      <tr><th>Column</th><th>Type</th><th>Constraints</th><th>Notes</th></tr>
+      <tr><td>id <span class="pk">PK / FK</span></td><td class="type">uuid</td><td>→ auth.users.id, cascade</td><td>Auto-created by trigger on signup</td></tr>
+      <tr><td>display_name</td><td class="type">varchar(100)</td><td>not null</td><td></td></tr>
+      <tr><td>avatar_url</td><td class="type">text</td><td class="nullable">nullable</td><td>Supabase Storage URL</td></tr>
+      <tr><td>settings</td><td class="type">jsonb</td><td>default '{}'</td><td>Theme, locale, digest opt-in</td></tr>
+      <tr><td>created_at</td><td class="type">timestamptz</td><td>default now()</td><td></td></tr>
+      <tr><td>updated_at</td><td class="type">timestamptz</td><td>default now()</td><td></td></tr>
+    </table>
+
+    <h3>notes</h3>
+    <table class="schema-table">
+      <tr><th>Column</th><th>Type</th><th>Constraints</th><th>Notes</th></tr>
+      <tr><td>id <span class="pk">PK</span></td><td class="type">uuid</td><td>default gen_random_uuid()</td><td></td></tr>
+      <tr><td>user_id <span class="fk">FK</span></td><td class="type">uuid</td><td>→ auth.users.id, cascade <span class="rls">RLS</span></td><td></td></tr>
+      <tr><td>title</td><td class="type">varchar(500)</td><td>not null, default ''</td><td></td></tr>
+      <tr><td>content</td><td class="type">text</td><td>not null, default ''</td><td>Markdown string</td></tr>
+      <tr><td>content_tsv</td><td class="type">tsvector</td><td>generated always</td><td>Full-text search (pg_trgm)</td></tr>
+      <tr><td>color</td><td class="type">varchar(20)</td><td class="nullable">nullable</td><td>Hex colour</td></tr>
+      <tr><td>is_pinned</td><td class="type">boolean</td><td>default false</td><td></td></tr>
+      <tr><td>is_archived</td><td class="type">boolean</td><td>default false</td><td></td></tr>
+      <tr><td>deleted_at</td><td class="type">timestamptz</td><td class="nullable">nullable</td><td>Soft delete / trash</td></tr>
+      <tr><td>sort_order</td><td class="type">integer</td><td>default 0</td><td>Manual drag order</td></tr>
+      <tr><td>created_at</td><td class="type">timestamptz</td><td>default now()</td><td></td></tr>
+      <tr><td>updated_at</td><td class="type">timestamptz</td><td>default now()</td><td></td></tr>
+    </table>
+
+    <h3>tags</h3>
+    <table class="schema-table">
+      <tr><th>Column</th><th>Type</th><th>Constraints</th><th>Notes</th></tr>
+      <tr><td>id <span class="pk">PK</span></td><td class="type">uuid</td><td></td><td></td></tr>
+      <tr><td>user_id <span class="fk">FK</span></td><td class="type">uuid</td><td>→ auth.users.id <span class="rls">RLS</span></td><td>unique(user_id, name)</td></tr>
+      <tr><td>name</td><td class="type">varchar(50)</td><td>not null</td><td></td></tr>
+      <tr><td>color</td><td class="type">varchar(20)</td><td class="nullable">nullable</td><td></td></tr>
+    </table>
+
+    <h3>note_tags  <small style="color:var(--muted);font-size:0.8rem;">(junction)</small></h3>
+    <table class="schema-table">
+      <tr><th>Column</th><th>Type</th><th>Constraints</th><th>Notes</th></tr>
+      <tr><td>note_id <span class="fk">FK</span></td><td class="type">uuid</td><td>→ notes.id, cascade</td><td>Composite PK</td></tr>
+      <tr><td>tag_id <span class="fk">FK</span></td><td class="type">uuid</td><td>→ tags.id, cascade</td><td>Composite PK</td></tr>
+    </table>
+
+    <h3>todo_lists</h3>
+    <table class="schema-table">
+      <tr><th>Column</th><th>Type</th><th>Constraints</th><th>Notes</th></tr>
+      <tr><td>id <span class="pk">PK</span></td><td class="type">uuid</td><td></td><td></td></tr>
+      <tr><td>user_id <span class="fk">FK</span></td><td class="type">uuid</td><td>→ auth.users.id <span class="rls">RLS</span></td><td></td></tr>
+      <tr><td>title</td><td class="type">varchar(200)</td><td>not null</td><td></td></tr>
+      <tr><td>color</td><td class="type">varchar(20)</td><td class="nullable">nullable</td><td></td></tr>
+      <tr><td>icon</td><td class="type">varchar(50)</td><td class="nullable">nullable</td><td>Emoji or icon name</td></tr>
+      <tr><td>is_archived</td><td class="type">boolean</td><td>default false</td><td></td></tr>
+      <tr><td>sort_order</td><td class="type">integer</td><td>default 0</td><td></td></tr>
+      <tr><td>created_at</td><td class="type">timestamptz</td><td>default now()</td><td></td></tr>
+      <tr><td>updated_at</td><td class="type">timestamptz</td><td>default now()</td><td></td></tr>
+    </table>
+
+    <h3>tasks</h3>
+    <table class="schema-table">
+      <tr><th>Column</th><th>Type</th><th>Constraints</th><th>Notes</th></tr>
+      <tr><td>id <span class="pk">PK</span></td><td class="type">uuid</td><td></td><td></td></tr>
+      <tr><td>list_id <span class="fk">FK</span></td><td class="type">uuid</td><td>→ todo_lists.id, cascade <span class="rls">RLS via list</span></td><td></td></tr>
+      <tr><td>parent_id <span class="fk">FK</span></td><td class="type">uuid</td><td>→ tasks.id, self-ref nullable</td><td>Sub-tasks</td></tr>
+      <tr><td>title</td><td class="type">varchar(500)</td><td>not null</td><td></td></tr>
+      <tr><td>notes</td><td class="type">text</td><td class="nullable">nullable</td><td></td></tr>
+      <tr><td>is_completed</td><td class="type">boolean</td><td>default false</td><td></td></tr>
+      <tr><td>completed_at</td><td class="type">timestamptz</td><td class="nullable">nullable</td><td></td></tr>
+      <tr><td>due_date</td><td class="type">date</td><td class="nullable">nullable</td><td></td></tr>
+      <tr><td>due_time</td><td class="type">time</td><td class="nullable">nullable</td><td></td></tr>
+      <tr><td>priority</td><td class="type">smallint</td><td>default 0</td><td>0=none 1=low 2=med 3=high</td></tr>
+      <tr><td>sort_order</td><td class="type">integer</td><td>default 0</td><td></td></tr>
+      <tr><td>recurrence</td><td class="type">jsonb</td><td class="nullable">nullable</td><td>RRULE-like spec (Phase 2)</td></tr>
+      <tr><td>created_at</td><td class="type">timestamptz</td><td>default now()</td><td></td></tr>
+      <tr><td>updated_at</td><td class="type">timestamptz</td><td>default now()</td><td></td></tr>
+    </table>
+
+    <h3>reminders</h3>
+    <table class="schema-table">
+      <tr><th>Column</th><th>Type</th><th>Constraints</th><th>Notes</th></tr>
+      <tr><td>id <span class="pk">PK</span></td><td class="type">uuid</td><td></td><td></td></tr>
+      <tr><td>user_id <span class="fk">FK</span></td><td class="type">uuid</td><td>→ auth.users.id <span class="rls">RLS</span></td><td></td></tr>
+      <tr><td>task_id <span class="fk">FK</span></td><td class="type">uuid</td><td class="nullable">nullable → tasks.id</td><td></td></tr>
+      <tr><td>note_id <span class="fk">FK</span></td><td class="type">uuid</td><td class="nullable">nullable → notes.id</td><td></td></tr>
+      <tr><td>remind_at</td><td class="type">timestamptz</td><td>not null</td><td></td></tr>
+      <tr><td>channel</td><td class="type">varchar(20)</td><td>default 'in_app'</td><td>in_app | email | push</td></tr>
+      <tr><td>is_sent</td><td class="type">boolean</td><td>default false</td><td></td></tr>
+      <tr><td>trigger_job_id</td><td class="type">text</td><td class="nullable">nullable</td><td>Trigger.dev job ID for cancellation</td></tr>
+    </table>
+  </section>
+
+  <!-- API Surface -->
+  <section>
+    <h2>API Surface</h2>
+    <p>Legend:
+      <span class="source-tag src-postgrest">PostgREST</span> auto-generated from table schema &nbsp;
+      <span class="source-tag src-edge">Edge Fn</span> custom Deno function &nbsp;
+      <span class="source-tag src-auth">Supabase Auth</span> SDK method, no custom server
+    </p>
+
+    <h3>Authentication</h3>
+    <div class="endpoint"><span class="method AUTO">AUTH</span><div><div class="endpoint-path">supabase.auth.signUp() <span class="source-tag src-auth">Supabase Auth</span></div><div class="endpoint-desc">Register with email + password. Triggers email verification.</div></div></div>
+    <div class="endpoint"><span class="method AUTO">AUTH</span><div><div class="endpoint-path">supabase.auth.signInWithPassword() <span class="source-tag src-auth">Supabase Auth</span></div><div class="endpoint-desc">Login. Returns JWT + refresh token (httpOnly cookie).</div></div></div>
+    <div class="endpoint"><span class="method AUTO">AUTH</span><div><div class="endpoint-path">supabase.auth.signInWithOAuth() <span class="source-tag src-auth">Supabase Auth</span></div><div class="endpoint-desc">Google / GitHub OAuth flow.</div></div></div>
+    <div class="endpoint"><span class="method AUTO">AUTH</span><div><div class="endpoint-path">supabase.auth.signOut() <span class="source-tag src-auth">Supabase Auth</span></div><div class="endpoint-desc">Revoke session.</div></div></div>
+    <div class="endpoint"><span class="method AUTO">AUTH</span><div><div class="endpoint-path">supabase.auth.resetPasswordForEmail() <span class="source-tag src-auth">Supabase Auth</span></div><div class="endpoint-desc">Send password reset email.</div></div></div>
+
+    <h3>Profiles</h3>
+    <div class="endpoint"><span class="method GET">GET</span><div><div class="endpoint-path">/rest/v1/profiles?id=eq.{uid} <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">Get own profile (RLS ensures only self).</div></div></div>
+    <div class="endpoint"><span class="method PATCH">PATCH</span><div><div class="endpoint-path">/rest/v1/profiles?id=eq.{uid} <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">Update display name, settings.</div></div></div>
+
+    <h3>Notes</h3>
+    <div class="endpoint"><span class="method GET">GET</span><div><div class="endpoint-path">/rest/v1/notes <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">List notes. Filter: <code>is_archived=eq.false</code>, <code>is_pinned=eq.true</code>, <code>order=sort_order</code>.</div></div></div>
+    <div class="endpoint"><span class="method POST">POST</span><div><div class="endpoint-path">/rest/v1/notes <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">Create note.</div></div></div>
+    <div class="endpoint"><span class="method GET">GET</span><div><div class="endpoint-path">/rest/v1/notes?id=eq.{id} <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">Get single note.</div></div></div>
+    <div class="endpoint"><span class="method PATCH">PATCH</span><div><div class="endpoint-path">/rest/v1/notes?id=eq.{id} <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">Update any note field.</div></div></div>
+    <div class="endpoint"><span class="method DELETE">DELETE</span><div><div class="endpoint-path">/rest/v1/notes?id=eq.{id} <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">Soft-delete: PATCH deleted_at = now().</div></div></div>
+    <div class="endpoint"><span class="method GET">GET</span><div><div class="endpoint-path">/rest/v1/note_tags?note_id=eq.{id}&amp;select=tag_id,tags(*) <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">Get tags for a note (with join).</div></div></div>
+
+    <h3>Tags</h3>
+    <div class="endpoint"><span class="method GET">GET</span><div><div class="endpoint-path">/rest/v1/tags <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">All user tags (RLS scoped).</div></div></div>
+    <div class="endpoint"><span class="method POST">POST</span><div><div class="endpoint-path">/rest/v1/tags <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">Create tag.</div></div></div>
+    <div class="endpoint"><span class="method PATCH">PATCH</span><div><div class="endpoint-path">/rest/v1/tags?id=eq.{id} <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">Rename / recolor.</div></div></div>
+    <div class="endpoint"><span class="method DELETE">DELETE</span><div><div class="endpoint-path">/rest/v1/tags?id=eq.{id} <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">Delete tag (cascade detaches from notes).</div></div></div>
+
+    <h3>To-Do Lists</h3>
+    <div class="endpoint"><span class="method GET">GET</span><div><div class="endpoint-path">/rest/v1/todo_lists <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">All user lists.</div></div></div>
+    <div class="endpoint"><span class="method POST">POST</span><div><div class="endpoint-path">/rest/v1/todo_lists <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">Create list.</div></div></div>
+    <div class="endpoint"><span class="method PATCH">PATCH</span><div><div class="endpoint-path">/rest/v1/todo_lists?id=eq.{id} <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">Rename, recolor, archive.</div></div></div>
+    <div class="endpoint"><span class="method DELETE">DELETE</span><div><div class="endpoint-path">/rest/v1/todo_lists?id=eq.{id} <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">Delete list (tasks cascade).</div></div></div>
+
+    <h3>Tasks</h3>
+    <div class="endpoint"><span class="method GET">GET</span><div><div class="endpoint-path">/rest/v1/tasks?list_id=eq.{id} <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">Tasks for a list. Filter by <code>is_completed</code>, <code>priority</code>, <code>due_date</code>.</div></div></div>
+    <div class="endpoint"><span class="method POST">POST</span><div><div class="endpoint-path">/rest/v1/tasks <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">Create task (set parent_id for sub-task).</div></div></div>
+    <div class="endpoint"><span class="method PATCH">PATCH</span><div><div class="endpoint-path">/rest/v1/tasks?id=eq.{id} <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">Update any task field including is_completed + completed_at.</div></div></div>
+    <div class="endpoint"><span class="method DELETE">DELETE</span><div><div class="endpoint-path">/rest/v1/tasks?id=eq.{id} <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">Delete task (sub-tasks cascade).</div></div></div>
+
+    <h3>Reminders</h3>
+    <div class="endpoint"><span class="method GET">GET</span><div><div class="endpoint-path">/rest/v1/reminders <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">Upcoming reminders (filter <code>is_sent=eq.false</code>).</div></div></div>
+    <div class="endpoint"><span class="method POST">POST</span><div><div class="endpoint-path">/rest/v1/reminders <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">Create reminder → DB webhook fires → Trigger.dev schedules job.</div></div></div>
+    <div class="endpoint"><span class="method DELETE">DELETE</span><div><div class="endpoint-path">/rest/v1/reminders?id=eq.{id} <span class="source-tag src-postgrest">PostgREST</span></div><div class="endpoint-desc">Delete reminder → Edge Function cancels Trigger.dev job via trigger_job_id.</div></div></div>
+
+    <h3>Custom Edge Functions</h3>
+    <div class="endpoint edge"><span class="method EDGE">EDGE</span><div><div class="endpoint-path">POST /functions/v1/dashboard <span class="source-tag src-edge">Edge Fn</span></div><div class="endpoint-desc">Returns pinned notes, today's tasks, overdue tasks, and counts in one round trip.</div></div></div>
+    <div class="endpoint edge"><span class="method EDGE">EDGE</span><div><div class="endpoint-path">GET /functions/v1/search?q= <span class="source-tag src-edge">Edge Fn</span></div><div class="endpoint-desc">Full-text search across notes (tsvector) and tasks (ilike) in one query.</div></div></div>
+    <div class="endpoint edge"><span class="method EDGE">EDGE</span><div><div class="endpoint-path">POST /functions/v1/reminder-cancel <span class="source-tag src-edge">Edge Fn</span></div><div class="endpoint-desc">Called on reminder DELETE — cancels the Trigger.dev job by ID.</div></div></div>
+    <div class="endpoint edge"><span class="method EDGE">EDGE</span><div><div class="endpoint-path">POST /functions/v1/export <span class="source-tag src-edge">Edge Fn</span></div><div class="endpoint-desc">Kicks off Trigger.dev export job. Returns job ID for polling.</div></div></div>
+    <div class="endpoint edge"><span class="method EDGE">EDGE</span><div><div class="endpoint-path">POST /functions/v1/webhooks/trigger <span class="source-tag src-edge">Edge Fn</span></div><div class="endpoint-desc">DB Webhook receiver — forwards reminder INSERT events to Trigger.dev.</div></div></div>
+  </section>
+
+  <!-- Project Structure -->
+  <section>
+    <h2>Project Structure</h2>
+    <div class="arch">
+justdoit/
+├── supabase/
+│   ├── config.toml             # Supabase CLI project config
+│   ├── migrations/
+│   │   ├── 0001_init.sql       # Tables + indexes
+│   │   ├── 0002_rls.sql        # All RLS policies
+│   │   ├── 0003_functions.sql  # DB functions (handle_new_user trigger)
+│   │   └── 0004_search.sql     # tsvector generated column + index
+│   ├── functions/
+│   │   ├── dashboard/
+│   │   │   └── index.ts        # Edge Function: aggregated dashboard
+│   │   ├── search/
+│   │   │   └── index.ts        # Edge Function: full-text search
+│   │   ├── reminder-cancel/
+│   │   │   └── index.ts        # Edge Function: cancel Trigger.dev job
+│   │   ├── export/
+│   │   │   └── index.ts        # Edge Function: kick off export job
+│   │   └── webhooks/
+│   │       └── trigger/
+│   │           └── index.ts    # DB Webhook → Trigger.dev bridge
+│   └── seed.sql                # Dev seed data
+│
+├── trigger/                    # Trigger.dev v3 project
+│   ├── trigger.config.ts
+│   └── jobs/
+│       ├── reminder.ts         # wait.until() reminder sender
+│       ├── recurring-tasks.ts  # Cron: daily recurrence expansion
+│       ├── email-digest.ts     # Cron: optional daily digest
+│       └── export.ts           # Long-running export + upload
+│
+├── shared/
+│   └── types.ts                # Shared TypeScript types (DB + API)
+│
+├── package.json
+└── drizzle.config.ts           # Schema introspection only (no runtime)
+    </div>
+  </section>
+
+  <!-- Milestones -->
+  <section>
+    <h2>Build Milestones</h2>
+    <div class="milestone">
+      <div class="milestone-num">1</div>
+      <div class="milestone-body">
+        <h3>Supabase project + schema</h3>
+        <p>Create Supabase project, run migrations (tables + indexes + tsvector), write all RLS policies, create <code>handle_new_user</code> DB trigger to auto-insert into <code>profiles</code>. Verify locally with Supabase CLI.</p>
+      </div>
+    </div>
+    <div class="milestone">
+      <div class="milestone-num">2</div>
+      <div class="milestone-body">
+        <h3>Auth (zero custom code)</h3>
+        <p>Enable email auth + Google/GitHub OAuth in Supabase dashboard. Configure email templates. Test full sign-up → verify → login → refresh → logout flow via supabase-js. Set up Auth webhook to call <code>email.verification</code> job in Trigger.dev.</p>
+      </div>
+    </div>
+    <div class="milestone">
+      <div class="milestone-num">3</div>
+      <div class="milestone-body">
+        <h3>Notes + Tags API</h3>
+        <p>PostgREST handles all CRUD automatically after RLS policies are in place. Test filtering, pagination, tag attach/detach. Verify RLS isolation between two test users.</p>
+      </div>
+    </div>
+    <div class="milestone">
+      <div class="milestone-num">4</div>
+      <div class="milestone-body">
+        <h3>To-Do Lists + Tasks API</h3>
+        <p>PostgREST CRUD for lists and tasks. Test sub-tasks (parent_id), priority filtering, completion toggle, and cascade deletes. Verify drag-order updates via bulk PATCH.</p>
+      </div>
+    </div>
+    <div class="milestone">
+      <div class="milestone-num">5</div>
+      <div class="milestone-body">
+        <h3>Edge Functions: Dashboard + Search</h3>
+        <p>Deploy <code>dashboard</code> and <code>search</code> Edge Functions. Dashboard aggregates pinned notes, today's tasks, overdue tasks in one DB call. Search uses <code>to_tsquery</code> on notes + <code>ilike</code> on tasks.</p>
+      </div>
+    </div>
+    <div class="milestone">
+      <div class="milestone-num">6</div>
+      <div class="milestone-body">
+        <h3>Trigger.dev + Reminders</h3>
+        <p>Set up Trigger.dev v3 project. Deploy <code>reminder.ts</code> job. Wire Supabase DB Webhook on <code>reminders INSERT</code> → <code>webhooks/trigger</code> Edge Function → Trigger.dev. Deploy <code>reminder-cancel</code> Edge Function. Test full flow: create reminder → job fires at correct time → email sent via Resend → <code>is_sent</code> updated.</p>
+      </div>
+    </div>
+    <div class="milestone">
+      <div class="milestone-num future">7</div>
+      <div class="milestone-body">
+        <h3>Phase 2: Storage, Recurring Tasks, Export, Digest</h3>
+        <p>Supabase Storage for note attachments. Trigger.dev <code>recurring-tasks.ts</code> cron job. <code>export.ts</code> job (builds ZIP → uploads to Storage → emails link). Optional daily digest cron.</p>
+      </div>
+    </div>
+    <div class="milestone">
+      <div class="milestone-num future">8</div>
+      <div class="milestone-body">
+        <h3>Phase 3: Realtime sync + Shared workspaces</h3>
+        <p>Enable Supabase Realtime on <code>notes</code> and <code>tasks</code> tables. Frontend subscribes via supabase-js. Add <code>workspace_id</code> to schema and RLS policies for team sharing.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    JustDoIt Backend Plan v2 · Supabase + Trigger.dev · Generated 2026-05-19
+  </footer>
+
+</div>
+</body>
+</html>

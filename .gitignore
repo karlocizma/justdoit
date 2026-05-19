@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+
+# Supabase local state
+supabase/.branches/
+supabase/.temp/
+
+# Build outputs
+dist/
+.trigger/

@@ -1,0 +1,31 @@
+{
+  "name": "justdoit",
+  "private": true,
+  "workspaces": [
+    "trigger"
+  ],
+  "scripts": {
+    "db:start":  "supabase start",
+    "db:stop":   "supabase stop",
+    "db:reset":  "supabase db reset",
+    "db:diff":   "supabase db diff",
+    "db:push":   "supabase db push",
+    "types":     "supabase gen types typescript --local > shared/database.types.ts",
+    "test:auth":  "tsx scripts/test-auth.ts",
+    "test:notes": "tsx scripts/test-notes.ts",
+    "test:tasks": "tsx scripts/test-tasks.ts",
+    "test:functions":  "tsx scripts/test-functions.ts",
+    "test:reminders":  "tsx scripts/test-reminders.ts",
+    "test:milestone7": "tsx scripts/test-milestone7.ts",
+    "test:milestone8": "tsx scripts/test-milestone8.ts",
+    "test":            "tsx scripts/test-auth.ts && tsx scripts/test-notes.ts && tsx scripts/test-tasks.ts && tsx scripts/test-functions.ts && tsx scripts/test-reminders.ts && tsx scripts/test-milestone7.ts && tsx scripts/test-milestone8.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.0"
+  },
+  "devDependencies": {
+    "supabase":    "^2.100.1",
+    "tsx":         "^4.19.3",
+    "typescript":  "^5.8.3"
+  }
+}

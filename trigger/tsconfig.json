@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target":                   "ES2022",
+    "module":                   "ESNext",
+    "moduleResolution":         "bundler",
+    "strict":                   true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck":             true,
+    "resolveJsonModule":        true,
+    "paths": {
+      "@justdoit/shared/*": ["../shared/*"]
+    }
+  },
+  "include": ["."],
+  "exclude": ["node_modules"]
+}
