@@ -4,6 +4,28 @@ Everything runs on free tiers. You need four accounts: **Supabase**, **Trigger.d
 
 ---
 
+## How this works — local terminal vs browser
+
+You never SSH into a server. All the CLI commands run **on your own machine** and talk to the cloud services over the internet.
+
+| What | Where |
+|---|---|
+| Create Supabase / Trigger.dev / Resend / Vercel accounts | **Browser** |
+| `supabase link`, `supabase db push`, `supabase functions deploy`, `supabase secrets set` | **Your terminal** |
+| `cd trigger && npm run deploy` | **Your terminal** |
+| Set Vercel env vars, import repo | **Browser** |
+
+Before running any `supabase` commands, install the CLI and log in once:
+
+```bash
+npm install -g supabase
+supabase login
+```
+
+Everything else below follows this pattern: do something in the browser to create a resource and get a key, then run a terminal command to push code or set that key.
+
+---
+
 ## 1. Supabase — database, auth, API, storage, edge functions
 
 **Sign up:** [supabase.com](https://supabase.com)
