@@ -6,16 +6,43 @@ import { createClient } from '@/lib/supabase/client'
 import s from './SettingsView.module.css'
 
 type User = { id: string; email: string; display_name: string | null; avatar_url: string | null }
+type Membership = { workspaceId: string; workspaceName: string; role: string; accepted: boolean }
 
-export function SettingsView({ user }: { user: User }) {
+export function SettingsView({ user, memberships: initialMemberships, digestEnabled: initialDigest }: {
+  user: User
+  memberships: Membership[]
+  digestEnabled: boolean
+}) {
   const router = useRouter()
   const supabase = createClient()
+
+  // Profile
   const [displayName, setDisplayName] = useState(user.display_name ?? '')
   const [newPassword, setNewPassword] = useState('')
   const [confirmNew, setConfirmNew] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  // Workspaces
+  const [memberships, setMemberships] = useState(initialMemberships)
+  const [newWsName, setNewWsName] = useState('')
+  const [creatingWs, setCreatingWs] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState<Record<string, string>>({})
+  const [inviting, setInviting] = useState<Record<string, boolean>>({})
+  const [wsMsg, setWsMsg] = useState<Record<string, string>>({})
+  const [expandInvite, setExpandInvite] = useState<Record<string, boolean>>({})
+
+  // Export
+  const [exporting, setExporting] = useState(false)
+  const [exportMsg, setExportMsg] = useState('')
+
+  // Digest
+  const [digest, setDigest] = useState(initialDigest)
+  const [digestSaving, setDigestSaving] = useState(false)
+
+  const acceptedWorkspaces = memberships.filter(m => m.accepted)
+  const pendingInvites = memberships.filter(m => !m.accepted)
 
   async function saveProfile(e: React.FormEvent) {
     e.preventDefault()
@@ -46,10 +73,97 @@ export function SettingsView({ user }: { user: User }) {
     router.refresh()
   }
 
+  async function createWorkspace() {
+    if (!newWsName.trim()) return
+    setCreatingWs(true)
+    const { data, error } = await supabase
+      .from('workspaces')
+      .insert({ name: newWsName.trim() })
+      .select('id, name')
+      .single()
+    setCreatingWs(false)
+    if (error || !data) { setError(error?.message ?? 'Failed to create workspace'); return }
+    setMemberships(prev => [...prev, { workspaceId: data.id, workspaceName: data.name, role: 'owner', accepted: true }])
+    setNewWsName('')
+    router.refresh()
+  }
+
+  async function acceptInvite(workspaceId: string) {
+    const { error } = await supabase.rpc('accept_workspace_invite', { p_workspace_id: workspaceId })
+    if (error) { setWsMsg(prev => ({ ...prev, [workspaceId]: error.message })); return }
+    setMemberships(prev => prev.map(m => m.workspaceId === workspaceId ? { ...m, accepted: true } : m))
+    router.refresh()
+  }
+
+  async function leaveWorkspace(workspaceId: string) {
+    if (!confirm('Leave this workspace? You will lose access to its notes and lists.')) return
+    await supabase.from('workspace_members').delete().eq('workspace_id', workspaceId).eq('user_id', user.id)
+    setMemberships(prev => prev.filter(m => m.workspaceId !== workspaceId))
+    router.refresh()
+  }
+
+  async function deleteWorkspace(workspaceId: string, name: string) {
+    if (!confirm(`Delete "${name}"? This will permanently remove the workspace and all its shared content for every member.`)) return
+    await supabase.from('workspaces').delete().eq('id', workspaceId)
+    setMemberships(prev => prev.filter(m => m.workspaceId !== workspaceId))
+    router.refresh()
+  }
+
+  async function inviteMember(workspaceId: string) {
+    const email = inviteEmail[workspaceId]?.trim()
+    if (!email) return
+    setInviting(prev => ({ ...prev, [workspaceId]: true }))
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/workspace-invite`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session!.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ workspace_id: workspaceId, email }),
+    })
+    const data = await res.json()
+    setInviting(prev => ({ ...prev, [workspaceId]: false }))
+    if (!res.ok) {
+      setWsMsg(prev => ({ ...prev, [workspaceId]: data.error ?? 'Invite failed' }))
+    } else if (data.already_member) {
+      setWsMsg(prev => ({ ...prev, [workspaceId]: 'Already a member.' }))
+    } else {
+      setWsMsg(prev => ({ ...prev, [workspaceId]: `Invite sent to ${email}.` }))
+      setInviteEmail(prev => ({ ...prev, [workspaceId]: '' }))
+    }
+  }
+
+  async function requestExport() {
+    setExporting(true)
+    setExportMsg('')
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/export`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session!.access_token}` },
+    })
+    const data = await res.json()
+    setExporting(false)
+    if (data.scheduled) {
+      setExportMsg("Export started! You'll receive an email with a download link when it's ready.")
+    } else {
+      setExportMsg(data.reason ?? 'Export is not available right now.')
+    }
+  }
+
+  async function toggleDigest() {
+    const next = !digest
+    setDigestSaving(true)
+    await supabase.from('profiles').update({ settings: { digest_enabled: next } }).eq('id', user.id)
+    setDigestSaving(false)
+    setDigest(next)
+  }
+
   return (
     <div className={s.root}>
       <h1 className={s.title}>Settings</h1>
 
+      {/* Profile */}
       <section className={s.section}>
         <h2 className={s.sectionTitle}>Profile</h2>
         <form onSubmit={saveProfile} className={s.form}>
@@ -74,6 +188,7 @@ export function SettingsView({ user }: { user: User }) {
         </form>
       </section>
 
+      {/* Password */}
       <section className={s.section}>
         <h2 className={s.sectionTitle}>Change password</h2>
         <form onSubmit={changePassword} className={s.form}>
@@ -105,6 +220,144 @@ export function SettingsView({ user }: { user: User }) {
         </form>
       </section>
 
+      {/* Workspaces */}
+      <section className={s.section}>
+        <h2 className={s.sectionTitle}>Workspaces</h2>
+
+        {/* Pending invites */}
+        {pendingInvites.length > 0 && (
+          <div className={s.wsBlock}>
+            <div className={s.wsSubLabel}>Pending invites</div>
+            {pendingInvites.map(m => (
+              <div key={m.workspaceId} className={s.wsRow}>
+                <div className={s.wsAvatar}>{m.workspaceName.slice(0, 1).toUpperCase()}</div>
+                <div className={s.wsName}>{m.workspaceName}</div>
+                {wsMsg[m.workspaceId] && <span className={s.wsMsg}>{wsMsg[m.workspaceId]}</span>}
+                <button className={s.acceptBtn} onClick={() => acceptInvite(m.workspaceId)}>
+                  Accept
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Accepted workspaces */}
+        {acceptedWorkspaces.length > 0 && (
+          <div className={s.wsBlock}>
+            {acceptedWorkspaces.length > 0 && pendingInvites.length > 0 && (
+              <div className={s.wsSubLabel}>Your workspaces</div>
+            )}
+            {acceptedWorkspaces.map(m => (
+              <div key={m.workspaceId} className={s.wsCard}>
+                <div className={s.wsCardHeader}>
+                  <div className={s.wsAvatar}>{m.workspaceName.slice(0, 1).toUpperCase()}</div>
+                  <div className={s.wsCardInfo}>
+                    <span className={s.wsName}>{m.workspaceName}</span>
+                    <span className={s.wsRole}>{m.role}</span>
+                  </div>
+                  <div className={s.wsCardActions}>
+                    {(m.role === 'owner' || m.role === 'admin') && (
+                      <button
+                        className={s.inviteToggle}
+                        onClick={() => setExpandInvite(prev => ({ ...prev, [m.workspaceId]: !prev[m.workspaceId] }))}
+                      >
+                        Invite member
+                      </button>
+                    )}
+                    {m.role !== 'owner' && (
+                      <button className={s.leaveBtn} onClick={() => leaveWorkspace(m.workspaceId)}>
+                        Leave
+                      </button>
+                    )}
+                    {m.role === 'owner' && (
+                      <button className={s.leaveBtn} onClick={() => deleteWorkspace(m.workspaceId, m.workspaceName)}>
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {expandInvite[m.workspaceId] && (
+                  <div className={s.inviteForm}>
+                    <input
+                      className={s.inviteInput}
+                      type="email"
+                      placeholder="colleague@example.com"
+                      value={inviteEmail[m.workspaceId] ?? ''}
+                      onChange={e => setInviteEmail(prev => ({ ...prev, [m.workspaceId]: e.target.value }))}
+                      onKeyDown={e => e.key === 'Enter' && inviteMember(m.workspaceId)}
+                    />
+                    <button
+                      className={s.saveBtn}
+                      onClick={() => inviteMember(m.workspaceId)}
+                      disabled={inviting[m.workspaceId] || !inviteEmail[m.workspaceId]?.trim()}
+                    >
+                      {inviting[m.workspaceId] ? 'Sending…' : 'Send invite'}
+                    </button>
+                  </div>
+                )}
+                {wsMsg[m.workspaceId] && <div className={s.wsMsg}>{wsMsg[m.workspaceId]}</div>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Create new workspace */}
+        <div className={s.wsCreate}>
+          <div className={s.wsSubLabel} style={{ marginBottom: 10 }}>
+            {acceptedWorkspaces.length === 0 ? 'No workspaces yet' : 'Create new workspace'}
+          </div>
+          <div className={s.inviteForm}>
+            <input
+              className={s.inviteInput}
+              placeholder="Workspace name"
+              value={newWsName}
+              onChange={e => setNewWsName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && createWorkspace()}
+            />
+            <button
+              className={s.saveBtn}
+              onClick={createWorkspace}
+              disabled={creatingWs || !newWsName.trim()}
+            >
+              {creatingWs ? 'Creating…' : 'Create'}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Email preferences */}
+      <section className={s.section}>
+        <h2 className={s.sectionTitle}>Email preferences</h2>
+        <div className={s.toggleRow}>
+          <div className={s.toggleInfo}>
+            <div className={s.toggleLabel}>Daily digest</div>
+            <div className={s.toggleDesc}>Receive a morning email with your tasks due today and overdue items.</div>
+          </div>
+          <button
+            className={`${s.toggle} ${digest ? s.toggleOn : ''}`}
+            onClick={toggleDigest}
+            disabled={digestSaving}
+            aria-pressed={digest}
+          >
+            <span className={s.toggleThumb} />
+          </button>
+        </div>
+      </section>
+
+      {/* Export */}
+      <section className={s.section}>
+        <h2 className={s.sectionTitle}>Export your data</h2>
+        <p className={s.exportDesc}>
+          Download all your notes and tasks as a ZIP archive. You&apos;ll receive an email with a download link.
+        </p>
+        {exportMsg && <div className={exportMsg.includes('started') ? s.success : s.error}>{exportMsg}</div>}
+        <button className={s.saveBtn} onClick={requestExport} disabled={exporting}>
+          {exporting ? 'Requesting…' : 'Export data'}
+        </button>
+      </section>
+
+      {/* Account */}
       <section className={s.section}>
         <h2 className={s.sectionTitle}>Account</h2>
         <button className={s.dangerBtn} onClick={signOut}>Sign out</button>

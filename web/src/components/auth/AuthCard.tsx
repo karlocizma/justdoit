@@ -208,16 +208,29 @@ export function AuthCard({ initialMode = 'login' }: { initialMode?: Mode }) {
 
 function Logo() {
   return (
-    <svg width="120" height="28" viewBox="0 0 120 28" fill="none">
-      <defs>
-        <linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#6c63ff"/>
-          <stop offset="100%" stopColor="#48d1cc"/>
-        </linearGradient>
-      </defs>
-      <text x="0" y="22" fontFamily="Inter, sans-serif" fontWeight="700" fontSize="22" fill="url(#g)">JustDo</text>
-      <text x="84" y="22" fontFamily="Inter, sans-serif" fontWeight="700" fontSize="22" fill="var(--jd-fg)">It</text>
-    </svg>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+      <svg width="34" height="34" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="jd-auth-grad" x1="0" y1="0" x2="1" y2="1" gradientTransform="rotate(135 .5 .5)">
+            <stop offset="0%" stopColor="#6c63ff" />
+            <stop offset="100%" stopColor="#48d1cc" />
+          </linearGradient>
+        </defs>
+        <rect width="64" height="64" rx="14" fill="url(#jd-auth-grad)" />
+        <path d="M38 14h-6v26c0 5-2 7-6 7-3 0-5-1-6-3l-4 5c2 3 6 5 11 5 8 0 13-5 13-13V14z" fill="#0f1117" />
+        <circle cx="44" cy="48" r="4" fill="#0f1117" />
+      </svg>
+      <span style={{
+        fontFamily: 'var(--jd-font-display)',
+        fontWeight: 700,
+        fontSize: 22,
+        letterSpacing: '-0.04em',
+        color: 'var(--jd-fg)',
+        lineHeight: 1,
+      }}>
+        justdoit
+      </span>
+    </div>
   )
 }
 

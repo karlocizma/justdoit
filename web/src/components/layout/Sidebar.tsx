@@ -7,9 +7,15 @@ import { createClient } from '@/lib/supabase/client'
 import s from './Sidebar.module.css'
 
 type List = { id: string; title: string; color: string; open_count: number }
+type Workspace = { id: string; name: string }
 type User = { email: string; name?: string }
 
-export function Sidebar({ lists, user }: { lists: List[]; user: User }) {
+export function Sidebar({ lists, user, workspaces = [], pendingInviteCount = 0 }: {
+  lists: List[]
+  user: User
+  workspaces?: Workspace[]
+  pendingInviteCount?: number
+}) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -65,7 +71,7 @@ export function Sidebar({ lists, user }: { lists: List[]; user: User }) {
           </Link>
         </div>
 
-        <div className={s.section}>Lists</div>
+        <div className={s.section}>Personal</div>
         <div className={s.scrollLists}>
           <div className={s.navList}>
             {lists.map(l => (
@@ -82,6 +88,20 @@ export function Sidebar({ lists, user }: { lists: List[]; user: User }) {
           </div>
         </div>
 
+        {workspaces.length > 0 && (
+          <>
+            <div className={s.section}>Workspaces</div>
+            <div className={s.navList}>
+              {workspaces.map(ws => (
+                <Link key={ws.id} href={`/workspaces/${ws.id}`} className={nav(`/workspaces/${ws.id}`)}>
+                  <span className={s.wsIcon}>{ws.name.slice(0, 1).toUpperCase()}</span>
+                  <span className={s.navLabel}>{ws.name}</span>
+                </Link>
+              ))}
+            </div>
+          </>
+        )}
+
         <div className={s.navList}>
           <Link href="/archive" className={nav('/archive')}>
             <span className={s.navIcon}><ArchiveIcon /></span>
@@ -94,6 +114,9 @@ export function Sidebar({ lists, user }: { lists: List[]; user: User }) {
           <Link href="/settings" className={nav('/settings')}>
             <span className={s.navIcon}><SettingsIcon /></span>
             <span className={s.navLabel}>Settings</span>
+            {pendingInviteCount > 0 && (
+              <span className={s.inviteBadge}>{pendingInviteCount}</span>
+            )}
           </Link>
         </div>
 
@@ -133,16 +156,29 @@ export function Sidebar({ lists, user }: { lists: List[]; user: User }) {
 
 function BrandLogo() {
   return (
-    <svg width="110" height="26" viewBox="0 0 110 26" fill="none">
-      <defs>
-        <linearGradient id="sbg" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#6c63ff"/>
-          <stop offset="100%" stopColor="#48d1cc"/>
-        </linearGradient>
-      </defs>
-      <text x="0" y="20" fontFamily="Inter, sans-serif" fontWeight="700" fontSize="20" fill="url(#sbg)">JustDo</text>
-      <text x="76" y="20" fontFamily="Inter, sans-serif" fontWeight="700" fontSize="20" fill="var(--jd-fg)">It</text>
-    </svg>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+      <svg width="26" height="26" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="jd-sidebar-grad" x1="0" y1="0" x2="1" y2="1" gradientTransform="rotate(135 .5 .5)">
+            <stop offset="0%" stopColor="#6c63ff" />
+            <stop offset="100%" stopColor="#48d1cc" />
+          </linearGradient>
+        </defs>
+        <rect width="64" height="64" rx="14" fill="url(#jd-sidebar-grad)" />
+        <path d="M38 14h-6v26c0 5-2 7-6 7-3 0-5-1-6-3l-4 5c2 3 6 5 11 5 8 0 13-5 13-13V14z" fill="#0f1117" />
+        <circle cx="44" cy="48" r="4" fill="#0f1117" />
+      </svg>
+      <span style={{
+        fontFamily: 'var(--jd-font-display)',
+        fontWeight: 700,
+        fontSize: 17,
+        letterSpacing: '-0.04em',
+        color: 'var(--jd-fg)',
+        lineHeight: 1,
+      }}>
+        justdoit
+      </span>
+    </div>
   )
 }
 

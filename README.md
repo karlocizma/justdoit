@@ -4,7 +4,13 @@
 
 A full-stack productivity app — Markdown notes with tags, to-do lists with sub-tasks, reminders, recurring tasks, file attachments, shared workspaces, and real-time sync.
 
-This repository is the **backend only**. The frontend (React/Next.js) lives in a separate repo and consumes this API.
+This is a **monorepo** containing the complete application:
+
+| Directory | Contents |
+|---|---|
+| `/` (root) | Supabase backend: migrations, Edge Functions, Trigger.dev jobs, integration tests |
+| `web/` | Next.js 16 frontend |
+| `trigger/` | Background jobs (Trigger.dev v3) |
 
 ---
 
@@ -12,8 +18,8 @@ This repository is the **backend only**. The frontend (React/Next.js) lives in a
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│  Frontend (separate repo)                                              │
-│  React / Next.js · supabase-js v2 · Supabase Realtime WebSocket       │
+│  Frontend  web/                                                        │
+│  Next.js 16 · React 19 · CSS Modules · @supabase/ssr                  │
 └──────────────────────────┬─────────────────────────────────────────────┘
                            │ REST + WebSocket
 ┌──────────────────────────▼─────────────────────────────────────────────┐
@@ -50,6 +56,7 @@ This repository is the **backend only**. The frontend (React/Next.js) lives in a
 
 | Layer | Technology |
 |---|---|
+| Frontend | Next.js 16, React 19, CSS Modules, `@supabase/ssr` |
 | Database | PostgreSQL 17 (via Supabase) |
 | Auth | Supabase Auth — email/password, GitHub OAuth, Google OAuth |
 | API | Supabase PostgREST (auto-generated CRUD) + custom Edge Functions |
@@ -58,7 +65,7 @@ This repository is the **backend only**. The frontend (React/Next.js) lives in a
 | Background jobs | Trigger.dev v3 |
 | Email | Resend |
 | Local dev | Supabase CLI, Docker |
-| Language | TypeScript (Edge Functions, Trigger jobs) · SQL (migrations) |
+| Language | TypeScript everywhere · SQL (migrations) |
 
 ---
 
@@ -77,6 +84,7 @@ git clone https://github.com/karlocizma/justdoit
 cd justdoit
 npm install
 cd trigger && npm install && cd ..
+cd web && npm install && cd ..
 ```
 
 ### 2 — Copy env file
@@ -95,29 +103,45 @@ npm run db:start         # starts all local containers
 npm run db:reset         # applies all migrations + seeds test data
 ```
 
-After start, note the `Project URL` and `API keys` printed to stdout — these are already pre-filled in `.env.example` for local dev.
+After `db:start`, the `Project URL` and `API keys` are printed to stdout — they are already pre-filled in `.env.example`.
 
-### 4 — Seed credentials
+Copy them into `web/.env.local`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key from supabase start output>
+```
+
+### 4 — Start the frontend
+
+```bash
+cd web
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+### 5 — Seed credentials
 
 | Email | Password |
 |---|---|
 | alice@example.com | password123 |
 | bob@example.com | password123 |
 
-### 5 — Run tests
+### 6 — Run backend tests
 
 ```bash
-npm test                 # full suite (318 tests across 7 files)
-npm run test:auth        # auth + RLS smoke tests (20 tests)
-npm run test:notes       # notes, tags, full-text search (61 tests)
-npm run test:tasks       # lists, tasks, sub-tasks, reorder (61 tests)
-npm run test:functions   # Edge Functions: dashboard, search (51 tests)
-npm run test:reminders   # reminders + reminder-webhook/cancel (39 tests)
-npm run test:milestone7  # storage, recurring tasks, export fn (36 tests)
-npm run test:milestone8  # realtime publication, workspaces, RLS (50 tests)
+npm test                 # full suite
+npm run test:auth        # auth + RLS
+npm run test:notes       # notes, tags, full-text search
+npm run test:tasks       # lists, tasks, sub-tasks, reorder
+npm run test:functions   # Edge Functions: dashboard, search
+npm run test:reminders   # reminders + webhook/cancel
+npm run test:milestone7  # storage, recurring tasks, export fn
+npm run test:milestone8  # realtime, workspaces, RLS
 ```
 
-### 6 — (Optional) Trigger.dev local dev
+### 7 — (Optional) Trigger.dev local dev
 
 ```bash
 cd trigger
@@ -132,55 +156,46 @@ Requires a `TRIGGER_SECRET_KEY` from [trigger.dev](https://trigger.dev).
 
 ```
 justdoit/
+├── web/                             # Next.js 16 frontend
+│   ├── src/app/                     # App Router pages
+│   │   ├── (app)/                   # Authenticated routes
+│   │   └── (auth)/                  # Login / register
+│   ├── src/components/              # React components
+│   ├── src/lib/supabase/            # Browser + server Supabase clients
+│   └── src/styles/tokens.css        # Design tokens (--jd-* CSS variables)
 ├── supabase/
-│   ├── config.toml              # Supabase local config
-│   ├── seed.sql                 # Dev seed data (alice + bob)
-│   ├── migrations/              # All schema migrations (in order)
-│   │   ├── 20260519000001_init.sql
-│   │   ├── 20260519000002_rls.sql
-│   │   ├── 20260519000003_functions.sql
-│   │   ├── 20260519000004_search.sql
-│   │   ├── 20260519000005_note_helpers.sql
-│   │   ├── 20260519000006_user_id_defaults.sql
-│   │   ├── 20260519000007_reminder_webhook.sql
-│   │   ├── 20260519000008_reminders_rls_fix.sql
-│   │   ├── 20260519000009_storage.sql
-│   │   ├── 20260519000010_recurring_tasks.sql
-│   │   └── 20260519000011_workspaces.sql
-│   ├── functions/               # Edge Functions (Deno)
-│   │   ├── _shared/cors.ts
-│   │   ├── auth-hook/
-│   │   ├── dashboard/
-│   │   ├── search/
-│   │   ├── export/
-│   │   ├── reminder-webhook/
-│   │   ├── reminder-cancel/
-│   │   └── workspace-invite/
-│   └── templates/               # Auth email templates (HTML)
+│   ├── config.toml
+│   ├── seed.sql
+│   ├── migrations/                  # Schema migrations (applied in order)
+│   └── functions/                   # Edge Functions (Deno)
+│       ├── _shared/cors.ts
+│       ├── dashboard/
+│       ├── search/
+│       ├── export/
+│       ├── reminder-webhook/
+│       ├── reminder-cancel/
+│       └── workspace-invite/
 ├── trigger/
-│   ├── jobs/
-│   │   ├── email-auth.ts        # Auth confirmation/reset emails
-│   │   ├── reminder.ts          # Timed reminder delivery
-│   │   ├── recurring-tasks.ts   # Daily overdue-task advancement (cron)
-│   │   ├── email-digest.ts      # Daily task digest email (cron)
-│   │   └── export.ts            # ZIP export + signed URL email
-│   ├── lib/email-templates.ts   # HTML email template functions
-│   └── trigger.config.ts
+│   └── jobs/
+│       ├── email-auth.ts
+│       ├── reminder.ts
+│       ├── recurring-tasks.ts       # cron
+│       ├── email-digest.ts          # cron
+│       └── export.ts
 ├── shared/
-│   └── database.types.ts        # Generated TypeScript types (run `npm run types`)
+│   └── database.types.ts            # Generated types (run `npm run types`)
 ├── scripts/
-│   └── test-*.ts                # Integration test suites
+│   └── test-*.ts                    # Integration test suites
 ├── docs/
-│   ├── database.md              # Full schema reference
-│   ├── api-reference.md         # Complete API docs
-│   ├── development.md           # Local development guide
-│   ├── deployment.md            # Production deployment checklist
-│   └── frontend-integration.md  # supabase-js patterns for the frontend
-├── frontend/                    # Design system + UI kit (Claude Design output)
-├── CLOUD_SETUP.md               # Step-by-step cloud deployment guide
-├── design-brief.md              # UX/visual spec for the frontend
-├── .env.example
-└── package.json
+│   ├── database.md
+│   ├── api-reference.md
+│   ├── development.md
+│   ├── deployment.md
+│   └── frontend-integration.md
+├── ROADMAP.md                       # Feature backlog and upcoming work
+├── CLOUD_SETUP.md                   # Free-tier deployment guide
+├── design-brief.md
+└── .env.example
 ```
 
 ---
@@ -201,8 +216,6 @@ See [`docs/database.md`](docs/database.md) for the full schema with column descr
 
 See [`docs/api-reference.md`](docs/api-reference.md) for complete documentation.
 
-**Quick summary:**
-
 | Type | Endpoint | Description |
 |---|---|---|
 | PostgREST | `/rest/v1/*` | Full CRUD on all tables (auth + RLS enforced) |
@@ -219,9 +232,9 @@ See [`docs/api-reference.md`](docs/api-reference.md) for complete documentation.
 
 ## Deployment
 
-See [`CLOUD_SETUP.md`](CLOUD_SETUP.md) for a step-by-step guide to deploying everything on free tiers (Supabase + Trigger.dev + Resend + Vercel).
+See [`CLOUD_SETUP.md`](CLOUD_SETUP.md) for a step-by-step guide deploying on free tiers (Supabase + Trigger.dev + Resend + Vercel).
 
-See [`docs/deployment.md`](docs/deployment.md) for a full production checklist.
+See [`docs/deployment.md`](docs/deployment.md) for the full production checklist.
 
 Short version:
 1. Create a Supabase project at [supabase.com](https://supabase.com)
@@ -229,47 +242,30 @@ Short version:
 3. Deploy Edge Functions: `supabase functions deploy`
 4. Set Edge Function secrets: `supabase secrets set RESEND_API_KEY=... TRIGGER_SECRET_KEY=...`
 5. Deploy Trigger.dev jobs: `cd trigger && npm run deploy`
-6. Configure OAuth redirect URLs in the Supabase dashboard
+6. Deploy the frontend to Vercel: `cd web && vercel`
+7. Configure OAuth redirect URLs in the Supabase dashboard
 
 ---
 
 ## Environment Variables
 
-See `.env.example` for the full list. Key variables:
+See `.env.example` for the full list.
 
 | Variable | Required | Notes |
 |---|---|---|
-| `SUPABASE_URL` | Yes | e.g. `https://xyz.supabase.co` |
-| `SUPABASE_ANON_KEY` | Yes | Safe to expose to clients |
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Frontend — e.g. `https://xyz.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Frontend — safe to expose to clients |
+| `SUPABASE_URL` | Yes | Backend / Edge Functions |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes (server-side only) | Never expose to clients |
 | `TRIGGER_SECRET_KEY` | No* | Jobs queue silently without it |
 | `RESEND_API_KEY` | No* | Emails skipped without it |
 | `FROM_EMAIL` | No | Defaults to `noreply@justdoit.app` |
 | `APP_URL` | No | Defaults to `https://justdoit.app` |
 
-*Graceful degradation: the app and API work without these, but email delivery and background jobs won't run.
+*Graceful degradation: the app works without these, but email delivery and background jobs won't run.
 
 ---
 
-## Frontend Integration
+## Roadmap
 
-The frontend should use the [Supabase JavaScript client](https://supabase.com/docs/reference/javascript):
-
-```bash
-npm install @supabase/supabase-js
-```
-
-Initialize once:
-```ts
-import { createClient } from '@supabase/supabase-js'
-import type { Database } from './shared/database.types'  // copy from this repo
-
-export const supabase = createClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-```
-
-See [`docs/frontend-integration.md`](docs/frontend-integration.md) for patterns, realtime subscriptions, storage uploads, and workspace invite flows.
-
-See [`design-brief.md`](design-brief.md) and [`frontend/`](frontend/) for the complete UX specification, visual design system, and UI kit.
+See [`ROADMAP.md`](ROADMAP.md) for the full feature backlog and upcoming work.

@@ -58,7 +58,7 @@
   /* ---------- TYPE — families ---------- */
   --jd-font-sans:    var(--font-inter, "Inter"), system-ui, -apple-system, "Segoe UI", sans-serif;
   --jd-font-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --jd-font-display: "Space Grotesk", "Inter", system-ui, sans-serif; /* brand/logo only */
+  --jd-font-display: var(--font-space-grotesk, "Space Grotesk"), "Inter", system-ui, sans-serif; /* brand/logo only */
 
   /* ---------- TYPE — scale ---------- */
   --jd-fs-display: 40px;   /* hero/marketing */

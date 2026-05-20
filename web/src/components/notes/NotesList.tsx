@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import s from './NotesList.module.css'
 
@@ -9,9 +10,10 @@ type Tag = { id: string; name: string; color: string | null }
 type NoteTag = { tags: Tag }
 type Note = { id: string; title: string; content: string; color: string | null; is_pinned: boolean; updated_at: string; note_tags: NoteTag[] }
 
-export function NotesList({ notes }: { notes: Note[] }) {
+export function NotesList({ notes, tags = [] }: { notes: Note[]; tags?: Tag[] }) {
   const router = useRouter()
   const supabase = createClient()
+  const [selectedTagId, setSelectedTagId] = useState<string | null>(null)
 
   async function createNote() {
     const { data } = await supabase
@@ -22,8 +24,11 @@ export function NotesList({ notes }: { notes: Note[] }) {
     if (data) router.push(`/notes/${data.id}`)
   }
 
-  const pinned = notes.filter(n => n.is_pinned)
-  const rest = notes.filter(n => !n.is_pinned)
+  const filtered = selectedTagId
+    ? notes.filter(n => n.note_tags?.some(nt => nt.tags?.id === selectedTagId))
+    : notes
+  const pinned = filtered.filter(n => n.is_pinned)
+  const rest = filtered.filter(n => !n.is_pinned)
 
   return (
     <div className={s.root}>
@@ -31,6 +36,27 @@ export function NotesList({ notes }: { notes: Note[] }) {
         <h1 className={s.title}>Notes</h1>
         <button className={s.newBtn} onClick={createNote}>+ New note</button>
       </div>
+
+      {tags.length > 0 && (
+        <div className={s.filters}>
+          <button
+            className={`${s.filterChip} ${selectedTagId === null ? s.filterActive : ''}`}
+            onClick={() => setSelectedTagId(null)}
+          >
+            All
+          </button>
+          {tags.map(tag => (
+            <button
+              key={tag.id}
+              className={`${s.filterChip} ${selectedTagId === tag.id ? s.filterActive : ''}`}
+              style={selectedTagId === tag.id && tag.color ? { borderColor: tag.color, color: tag.color, background: `${tag.color}18` } : undefined}
+              onClick={() => setSelectedTagId(prev => prev === tag.id ? null : tag.id)}
+            >
+              {tag.name}
+            </button>
+          ))}
+        </div>
+      )}
 
       {pinned.length > 0 && (
         <>
@@ -48,6 +74,12 @@ export function NotesList({ notes }: { notes: Note[] }) {
             {rest.map(n => <NoteCard key={n.id} note={n} />)}
           </div>
         </>
+      )}
+
+      {filtered.length === 0 && notes.length > 0 && (
+        <div className={s.empty}>
+          <p>No notes tagged with this category.</p>
+        </div>
       )}
 
       {notes.length === 0 && (

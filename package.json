@@ -18,7 +18,10 @@
     "test:reminders":  "tsx scripts/test-reminders.ts",
     "test:milestone7": "tsx scripts/test-milestone7.ts",
     "test:milestone8": "tsx scripts/test-milestone8.ts",
-    "test":            "tsx scripts/test-auth.ts && tsx scripts/test-notes.ts && tsx scripts/test-tasks.ts && tsx scripts/test-functions.ts && tsx scripts/test-reminders.ts && tsx scripts/test-milestone7.ts && tsx scripts/test-milestone8.ts"
+    "test":            "tsx scripts/test-auth.ts && tsx scripts/test-notes.ts && tsx scripts/test-tasks.ts && tsx scripts/test-functions.ts && tsx scripts/test-reminders.ts && tsx scripts/test-milestone7.ts && tsx scripts/test-milestone8.ts",
+    "web:dev":         "npm run dev --prefix web",
+    "web:build":       "npm run build --prefix web",
+    "web:install":     "npm install --prefix web"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.0"

@@ -139,7 +139,14 @@ Emails sent by this app:
 
 ## 4. Frontend
 
-The frontend (React/Next.js, separate repo) needs these environment variables:
+The frontend lives in the `web/` directory. Deploy it to Vercel:
+
+```bash
+cd web
+vercel
+```
+
+Set the following environment variables in the Vercel project dashboard (or via `vercel env add`):
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://<your-project-ref>.supabase.co
@@ -147,6 +154,14 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
 ```
 
 The anon key is safe to expose publicly — RLS enforces all access controls server-side.
+
+Alternatively, deploy manually:
+
+```bash
+cd web
+npm run build
+npm run start   # serves on port 3000
+```
 
 ---
 
@@ -176,7 +191,7 @@ The anon key is safe to expose publicly — RLS enforces all access controls ser
 - [ ] Trigger.dev project created, jobs deployed
 - [ ] Trigger.dev environment variables set (Supabase URL + service key + Resend)
 - [ ] Resend domain verified, `FROM_EMAIL` updated
-- [ ] Frontend deployed with correct `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- [ ] Frontend (`web/`) deployed to Vercel with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` set
 - [ ] End-to-end smoke test: sign up, create note, create task, check reminder
 
 ---
