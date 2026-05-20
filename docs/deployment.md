@@ -29,21 +29,27 @@ supabase db push
 
 `db push` applies every migration in `supabase/migrations/` to the remote database. It's idempotent for already-applied migrations.
 
+After `db push`, confirm these tables exist in the dashboard:
+`profiles` · `notes` · `tags` · `note_tags` · `todo_lists` · `tasks` · `reminders` · `workspaces` · `workspace_members` · `push_subscriptions`
+
 ### Deploy Edge Functions
 
 ```bash
-supabase functions deploy dashboard
-supabase functions deploy search
-supabase functions deploy export
-supabase functions deploy reminder-webhook
-supabase functions deploy reminder-cancel
-supabase functions deploy workspace-invite
-```
-
-Or deploy all at once:
-```bash
 supabase functions deploy
 ```
+
+This deploys all 8 functions:
+
+| Function | Purpose |
+|---|---|
+| `dashboard` | Aggregated dashboard stats |
+| `search` | Full-text search across notes + tasks |
+| `export` | Queue a ZIP export (delivers via email) |
+| `reminder-webhook` | Schedules reminder delivery via Trigger.dev |
+| `reminder-cancel` | Cancels a pending reminder |
+| `workspace-invite` | Sends workspace invitation emails |
+| `push-subscribe` | Saves / removes browser push subscriptions |
+| `push-send` | Sends VAPID-signed push notifications to a user's devices |
 
 ### Set Edge Function secrets
 
@@ -52,13 +58,22 @@ supabase secrets set \
   RESEND_API_KEY=re_live_xxx \
   TRIGGER_SECRET_KEY=tr_prod_xxx \
   FROM_EMAIL=noreply@yourdomain.com \
-  APP_URL=https://yourdomain.com
+  APP_URL=https://yourdomain.com \
+  VAPID_PUBLIC_KEY=<your-vapid-public-key> \
+  VAPID_PRIVATE_KEY=<your-vapid-private-key> \
+  VAPID_SUBJECT=mailto:noreply@yourdomain.com
 ```
 
 Verify secrets are set:
 ```bash
 supabase secrets list
 ```
+
+> **Generating VAPID keys** — push notifications require a VAPID key pair. Generate one with:
+> ```bash
+> npx web-push generate-vapid-keys
+> ```
+> This prints a public key and a private key. The public key also goes into the frontend env var `NEXT_PUBLIC_VAPID_PUBLIC_KEY`.
 
 ### Configure Auth
 
@@ -119,7 +134,7 @@ APP_URL=https://yourdomain.com
 
 ### Connecting to Supabase Edge Functions
 
-The `reminder-webhook` Edge Function is called by the database trigger when a reminder is created. It calls `Trigger.dev` to schedule the reminder delivery. Set `TRIGGER_SECRET_KEY` as a Supabase secret (see above).
+The `reminder-webhook` Edge Function is called by the database trigger when a reminder is created. It calls Trigger.dev to schedule the reminder delivery. Set `TRIGGER_SECRET_KEY` as a Supabase secret (see above).
 
 ---
 
@@ -151,9 +166,11 @@ Set the following environment variables in the Vercel project dashboard (or via 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://<your-project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=<your-vapid-public-key>
 ```
 
 The anon key is safe to expose publicly — RLS enforces all access controls server-side.
+`NEXT_PUBLIC_VAPID_PUBLIC_KEY` is also safe to expose — it is only the public half of the VAPID key pair.
 
 Alternatively, deploy manually:
 
@@ -169,30 +186,37 @@ npm run start   # serves on port 3000
 
 | Variable | Where set | Required | Description |
 |---|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Frontend `.env` / Vercel | Yes | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Frontend `.env` / Vercel | Yes | Public client key — safe to expose |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Frontend `.env` / Vercel | For push notifications | VAPID public key (safe to expose) |
 | `SUPABASE_URL` | Supabase secrets + Trigger env | Yes | Project URL |
-| `SUPABASE_ANON_KEY` | Frontend `.env` | Yes | Public client key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase secrets + Trigger env | Yes | Server-side only, never expose |
 | `TRIGGER_SECRET_KEY` | Supabase secrets | For reminders/export | Trigger.dev API key |
 | `RESEND_API_KEY` | Supabase secrets + Trigger env | For email | Resend API key |
 | `FROM_EMAIL` | Supabase secrets + Trigger env | No | Defaults to `noreply@justdoit.app` |
 | `APP_URL` | Supabase secrets + Trigger env | No | Defaults to `https://justdoit.app` |
+| `VAPID_PUBLIC_KEY` | Supabase secrets | For push notifications | VAPID public key |
+| `VAPID_PRIVATE_KEY` | Supabase secrets | For push notifications | VAPID private key — never expose |
+| `VAPID_SUBJECT` | Supabase secrets | For push notifications | `mailto:` or HTTPS URL identifying the push sender |
 
 ---
 
 ## Production Checklist
 
 - [ ] Supabase project created, region selected
-- [ ] `supabase db push` succeeded (check migration list in dashboard)
-- [ ] All 6 Edge Functions deployed
+- [ ] `supabase db push` succeeded — all 10 tables visible in Table Editor
+- [ ] All 8 Edge Functions deployed (`supabase functions deploy`)
 - [ ] `RESEND_API_KEY` and `TRIGGER_SECRET_KEY` set as Supabase secrets
+- [ ] VAPID key pair generated (`npx web-push generate-vapid-keys`)
+- [ ] `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` set as Supabase secrets
 - [ ] Supabase Auth Site URL and Redirect URLs configured
 - [ ] GitHub and/or Google OAuth apps created with correct callback URLs
 - [ ] Auth email templates uploaded (or Resend SMTP configured)
 - [ ] Trigger.dev project created, jobs deployed
 - [ ] Trigger.dev environment variables set (Supabase URL + service key + Resend)
 - [ ] Resend domain verified, `FROM_EMAIL` updated
-- [ ] Frontend (`web/`) deployed to Vercel with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` set
-- [ ] End-to-end smoke test: sign up, create note, create task, check reminder
+- [ ] Frontend deployed to Vercel with `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `NEXT_PUBLIC_VAPID_PUBLIC_KEY` set
+- [ ] End-to-end smoke test: sign up → create note → create task → set reminder → toggle push notifications
 
 ---
 
@@ -202,3 +226,4 @@ npm run start   # serves on port 3000
 - **Trigger.dev runs:** Dashboard → Runs (shows job history, errors, retries)
 - **Resend delivery:** Dashboard → Emails (delivery status, bounces)
 - **Realtime:** Supabase Dashboard → Realtime → Inspector (live event stream)
+- **Push subscriptions:** Supabase → Table Editor → `push_subscriptions` (shows active device subscriptions per user)

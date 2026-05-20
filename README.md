@@ -2,7 +2,7 @@
 
 **Notes & Tasks, done right.**
 
-A full-stack productivity app — Markdown notes with tags, to-do lists with sub-tasks, reminders, recurring tasks, file attachments, shared workspaces, and real-time sync.
+A full-stack productivity app — Markdown notes with tags, to-do lists with sub-tasks, reminders, recurring tasks, file attachments, shared workspaces, real-time sync, calendar view, browser push notifications, and more.
 
 This is a **monorepo** containing the complete application:
 
@@ -204,7 +204,7 @@ justdoit/
 
 See [`docs/database.md`](docs/database.md) for the full schema with column descriptions.
 
-**Tables:** `profiles` · `notes` · `note_tags` · `tags` · `todo_lists` · `tasks` · `reminders` · `workspaces` · `workspace_members`
+**Tables:** `profiles` · `notes` · `note_tags` · `tags` · `todo_lists` · `tasks` · `reminders` · `workspaces` · `workspace_members` · `push_subscriptions`
 
 **Storage buckets:** `note-attachments` (5 MB/file) · `exports` (100 MB/file)
 
@@ -227,6 +227,8 @@ See [`docs/api-reference.md`](docs/api-reference.md) for complete documentation.
 | Edge Fn | `POST /functions/v1/export` | Queue a ZIP export (delivers via email) |
 | Edge Fn | `POST /functions/v1/reminder-cancel` | Cancel a pending reminder |
 | Edge Fn | `POST /functions/v1/workspace-invite` | Invite a user to a workspace |
+| Edge Fn | `POST /functions/v1/push-subscribe` | Save or remove a browser push subscription |
+| Edge Fn | `POST /functions/v1/push-send` | Send a push notification to a user's devices |
 
 ---
 
@@ -239,11 +241,12 @@ See [`docs/deployment.md`](docs/deployment.md) for the full production checklist
 Short version:
 1. Create a Supabase project at [supabase.com](https://supabase.com)
 2. Push migrations: `supabase db push`
-3. Deploy Edge Functions: `supabase functions deploy`
-4. Set Edge Function secrets: `supabase secrets set RESEND_API_KEY=... TRIGGER_SECRET_KEY=...`
-5. Deploy Trigger.dev jobs: `cd trigger && npm run deploy`
-6. Deploy the frontend to Vercel: `cd web && vercel`
-7. Configure OAuth redirect URLs in the Supabase dashboard
+3. Deploy Edge Functions: `supabase functions deploy` (8 functions)
+4. Generate VAPID keys: `npx web-push generate-vapid-keys`
+5. Set Edge Function secrets: `supabase secrets set RESEND_API_KEY=... TRIGGER_SECRET_KEY=... VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:...`
+6. Deploy Trigger.dev jobs: `cd trigger && npm run deploy`
+7. Deploy the frontend to Vercel: set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
+8. Configure OAuth redirect URLs in the Supabase dashboard
 
 ---
 
@@ -261,8 +264,12 @@ See `.env.example` for the full list.
 | `RESEND_API_KEY` | No* | Emails skipped without it |
 | `FROM_EMAIL` | No | Defaults to `noreply@justdoit.app` |
 | `APP_URL` | No | Defaults to `https://justdoit.app` |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | No* | Push notifications require this (frontend) |
+| `VAPID_PUBLIC_KEY` | No* | Push notifications require this (Supabase secrets) |
+| `VAPID_PRIVATE_KEY` | No* | Push notifications require this (Supabase secrets) |
+| `VAPID_SUBJECT` | No* | `mailto:` address for VAPID identification |
 
-*Graceful degradation: the app works without these, but email delivery and background jobs won't run.
+*Graceful degradation: the app works without these, but the relevant feature won't function. Generate VAPID keys with `npx web-push generate-vapid-keys`.
 
 ---
 

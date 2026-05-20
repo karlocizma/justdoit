@@ -11,12 +11,12 @@ Allow the app to work without an internet connection and sync automatically when
 
 **Scope:**
 - **Local data store** — IndexedDB via [Dexie.js](https://dexie.org/) to cache notes and tasks locally
-- **Service worker** — cache the Next.js app shell so the UI loads offline
+- **Service worker** — cache the Next.js app shell so the UI loads offline (the push notification service worker `public/sw.js` is already registered — extend it)
 - **Write queue** — buffer mutations locally when offline, replay against Supabase when the connection returns
 - **Conflict resolution** — last-write-wins based on `updated_at` timestamp (covers the common case; CRDTs are an option if more granularity is needed later)
 - **Sync indicator** — visible badge when there are unsynced local changes
 
-**Depends on:** nothing blocking; can be layered on top of the current Supabase client pattern.
+**Depends on:** the service worker added for push notifications is a natural starting point.
 
 ---
 
@@ -25,28 +25,8 @@ Allow the app to work without an internet connection and sync automatically when
 ### Progressive Web App (PWA)
 Installable from the browser on desktop and mobile. Pairs directly with offline mode — the service worker needed for offline caching also enables PWA install prompts. Requires a Web App Manifest and icon set.
 
-### Keyboard Shortcuts & Command Palette
-A `⌘K` / `Ctrl+K` command palette for quick navigation and actions: jump to any note or list, create a new note, search, switch workspaces. Complements the existing full-text search.
-
-Individual shortcuts: `N` for new note, `T` for new task, `P` to toggle pin, `E` to toggle edit/preview mode.
-
-### Browser Push Notifications
-Deliver reminders as browser push notifications in addition to (or instead of) email. Uses the Web Push API + a Supabase Edge Function to send notifications. Users can opt in per-device from Settings.
-
-### Dark / Light Theme Toggle
-The CSS already has both themes via `[data-theme="light"]` overrides in `tokens.css`. Wire up a toggle in the Settings page and persist the preference in `profiles.settings`.
-
-### Calendar View
-Monthly/weekly calendar showing tasks with due dates. Clicking a day shows tasks due that day. Drag-and-drop to reschedule. Good companion to the daily digest email.
-
-### Note Linking
-`[[Note Title]]` wiki-style internal links in the Markdown editor. Clicking a link opens the referenced note. Autocompletion dropdown when typing `[[`. Requires a link-extraction pass to build a backlinks index.
-
-### Note Templates
-Pre-defined templates selectable when creating a new note: Meeting Notes, Project Plan, Daily Journal, Bug Report, etc. Templates are just Markdown strings injected into the content field on creation. Users can also save their own notes as templates.
-
 ### Drag-and-Drop Reorder
-- Reorder tasks within a list by dragging (already has a `sort_order` column and `reorder_tasks` RPC)
+- Reorder tasks within a list by dragging (DB already has `sort_order` column and `reorder_tasks` RPC)
 - Reorder lists in the sidebar
 - Reorder notes in the notes grid (pin is the current proxy for this)
 
@@ -54,6 +34,12 @@ Pre-defined templates selectable when creating a new note: Meeting Notes, Projec
 - Download individual notes as `.md` files directly from the editor (no email required)
 - Export a full list as Markdown or CSV
 - Notion-compatible JSON import
+
+### Custom Note Templates
+Users can save any note as a personal template. Currently 6 built-in templates exist; this adds user-defined templates stored in `profiles.settings`.
+
+### Backlinks Index for Note Linking
+The `[[Title]]` note linking is live. Backlinks — a panel showing which other notes link to the current note — requires a server-side index (e.g. a `note_links` table populated on save) or a full-text search over `content` for `[[CurrentTitle]]`.
 
 ---
 
@@ -78,21 +64,35 @@ A React Native app sharing auth and data with the same Supabase backend. The API
 ### Due Dates on Notes
 Notes can have a `due_at` timestamp alongside tasks. Appears in the calendar view and daily digest.
 
+### Calendar Enhancements
+- Weekly view alongside the current monthly view
+- Drag-and-drop on the calendar to reschedule tasks
+
 ---
 
 ## Completed
 
-- [x] Supabase backend: auth, notes, tasks, tags, reminders, recurring tasks, workspaces, RLS
-- [x] Edge Functions: dashboard, search, export, reminder-webhook/cancel, workspace-invite
-- [x] Trigger.dev background jobs: reminders, recurring tasks, daily digest, export ZIP
+### Frontend Features
 - [x] Next.js 16 frontend with full auth flow (email/password, OAuth)
+- [x] **Dark / light theme toggle** — Sun/Moon button in TopBar, persists to localStorage, no-flash inline script
+- [x] **Calendar view** — `/calendar` route with monthly grid, priority-colour dots, side panel for day's tasks
+- [x] **Command palette** — `⌘K` / `Ctrl+K` global shortcut, live note/list search, arrow key navigation; `N` = new note, `/` = search
+- [x] **Note templates** — 6 built-in templates (Meeting Notes, Project Plan, Daily Journal, Bug Report, Weekly Review, Book Notes); replace or append to existing content
+- [x] **Note linking** — `[[Title]]` autocomplete in editor, clickable links in preview mode, unresolved links highlighted
+- [x] **Browser push notifications** — VAPID-signed Web Push, `push_subscriptions` table, opt-in toggle in Settings
 - [x] Notes list with tag filter chips
-- [x] Note editor: Markdown preview toggle, formatting toolbar, word/character count, tag management, color labels, pin
+- [x] Note editor: Markdown preview toggle, formatting toolbar, word/character count, tag management, colour labels, pin
 - [x] Task lists with sub-tasks, reorder, completion, recurring tasks
 - [x] Shared workspaces: create, invite members, accept invites, leave/delete
 - [x] Archive and Trash with restore / hard delete
 - [x] Data export (ZIP, delivered via email)
 - [x] Daily digest email toggle in Settings
+- [x] Design system: CSS Modules + `--jd-` design tokens, dark theme canonical
+
+### Backend & Infrastructure
+- [x] Supabase backend: auth, notes, tasks, tags, reminders, recurring tasks, workspaces, RLS
+- [x] Edge Functions: `dashboard`, `search`, `export`, `reminder-webhook`, `reminder-cancel`, `workspace-invite`, `push-subscribe`, `push-send`
+- [x] Trigger.dev background jobs: reminders, recurring tasks, daily digest, export ZIP
 - [x] Real-time sync via Supabase Realtime WebSocket
 - [x] Supabase Storage for note attachments and exports
-- [x] Design system: CSS Modules + `--jd-` design tokens, dark theme canonical
+- [x] `push_subscriptions` table with RLS for browser push notification delivery

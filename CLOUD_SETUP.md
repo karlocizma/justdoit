@@ -13,6 +13,7 @@ You never SSH into a server. All the CLI commands run **on your own machine** an
 | Create Supabase / Trigger.dev / Resend / Vercel accounts | **Browser** |
 | `supabase link`, `supabase db push`, `supabase functions deploy`, `supabase secrets set` | **Your terminal** |
 | `cd trigger && npm run deploy` | **Your terminal** |
+| Generate VAPID keys (`npx web-push generate-vapid-keys`) | **Your terminal** |
 | Set Vercel env vars, import repo | **Browser** |
 
 Before running any `supabase` commands, install the CLI and log in once:
@@ -53,29 +54,49 @@ supabase db push
 
 The project ref is the short ID in your Supabase project URL: `https://supabase.com/dashboard/project/<ref>`.
 
-After `db push` succeeds, go to **Table Editor** in the dashboard — you should see all tables: `profiles`, `notes`, `tags`, `todo_lists`, `tasks`, `reminders`, `workspaces`, `workspace_members`.
+After `db push` succeeds, go to **Table Editor** in the dashboard — you should see all 10 tables:
+`profiles` · `notes` · `tags` · `note_tags` · `todo_lists` · `tasks` · `reminders` · `workspaces` · `workspace_members` · `push_subscriptions`
 
 ### 1.4 Deploy edge functions
 ```bash
 supabase functions deploy
 ```
 
-This deploys all 6 functions: `dashboard`, `search`, `export`, `reminder-webhook`, `reminder-cancel`, `workspace-invite`.
+This deploys all 8 functions: `dashboard`, `search`, `export`, `reminder-webhook`, `reminder-cancel`, `workspace-invite`, `push-subscribe`, `push-send`.
 
-Verify in the dashboard: **Edge Functions** — all 6 should be listed.
+Verify in the dashboard: **Edge Functions** — all 8 should be listed.
 
-### 1.5 Set secrets (skip Trigger + Resend for now, come back after steps 2 and 3)
+### 1.5 Generate VAPID keys for push notifications
+
+Browser push notifications require a VAPID key pair. Generate one now:
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+This prints something like:
+```
+Public Key:  BK8abc123...
+Private Key: xyz789...
+```
+
+Save both — you'll need them in steps 1.6 and 4.2.
+
+### 1.6 Set secrets (skip Trigger + Resend for now, come back after steps 2 and 3)
 ```bash
 supabase secrets set \
   RESEND_API_KEY=re_xxxx \
   TRIGGER_SECRET_KEY=tr_xxxx \
   FROM_EMAIL=noreply@yourdomain.com \
-  APP_URL=https://yourdomain.com
+  APP_URL=https://yourdomain.com \
+  VAPID_PUBLIC_KEY=<your-vapid-public-key> \
+  VAPID_PRIVATE_KEY=<your-vapid-private-key> \
+  VAPID_SUBJECT=mailto:noreply@yourdomain.com
 ```
 
 You can run this again any time to update a value.
 
-### 1.6 Configure authentication
+### 1.7 Configure authentication
 Go to **Authentication → URL Configuration**:
 - **Site URL:** `https://yourdomain.com` (your frontend URL)
 - **Redirect URLs:** add `https://yourdomain.com/**`
@@ -166,11 +187,10 @@ And in Trigger.dev dashboard → Environment Variables → `RESEND_API_KEY`.
 
 **Sign up:** [vercel.com](https://vercel.com)
 
-Once you have the Next.js frontend repo:
-
 ### 4.1 Import project
 - Click **Add New → Project**
-- Connect your GitHub account and select the frontend repo
+- Connect your GitHub account and select this repo
+- Set the **Root Directory** to `web`
 - Framework: Next.js (auto-detected)
 
 ### 4.2 Set environment variables
@@ -180,6 +200,9 @@ In the Vercel project → **Settings → Environment Variables**, add:
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | your Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | your anon/public key |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | your VAPID public key from step 1.5 |
+
+Both `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `NEXT_PUBLIC_VAPID_PUBLIC_KEY` are safe to expose — they are public-facing keys by design.
 
 ### 4.3 Deploy
 Click **Deploy**. Vercel builds and deploys automatically. Every push to `main` triggers a new deploy.
@@ -196,29 +219,35 @@ Your frontend URL is `https://your-project.vercel.app` (or a custom domain if yo
 
 | Key | Used in | Where to find |
 |---|---|---|
-| `SUPABASE_URL` | Frontend, Trigger.dev | Supabase → Project Settings → API |
-| `SUPABASE_ANON_KEY` | Frontend only | Supabase → Project Settings → API |
+| `NEXT_PUBLIC_SUPABASE_URL` | Frontend | Supabase → Project Settings → API |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Frontend | Supabase → Project Settings → API |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Frontend | Generated in step 1.5 |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase secrets, Trigger.dev | Supabase → Project Settings → API |
 | `TRIGGER_SECRET_KEY` | Supabase secrets, deploy cmd | Trigger.dev → Project Settings |
 | `RESEND_API_KEY` | Supabase secrets, Trigger.dev | Resend → API Keys |
 | `FROM_EMAIL` | Supabase secrets, Trigger.dev | Your sending domain email address |
 | `APP_URL` | Supabase secrets, Trigger.dev | Your Vercel URL |
+| `VAPID_PUBLIC_KEY` | Supabase secrets | Generated in step 1.5 |
+| `VAPID_PRIVATE_KEY` | Supabase secrets | Generated in step 1.5 — never expose |
+| `VAPID_SUBJECT` | Supabase secrets | `mailto:noreply@yourdomain.com` |
 
 ---
 
 ## Deployment checklist
 
 - [ ] Supabase project created
-- [ ] `supabase db push` ran successfully (all tables visible in Table Editor)
-- [ ] All 6 edge functions deployed (`supabase functions deploy`)
+- [ ] `supabase db push` ran successfully (all 10 tables visible in Table Editor)
+- [ ] All 8 edge functions deployed (`supabase functions deploy`)
+- [ ] VAPID key pair generated (`npx web-push generate-vapid-keys`)
+- [ ] VAPID keys set as Supabase secrets (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`)
 - [ ] Supabase Auth Site URL and redirect URLs set
 - [ ] GitHub and/or Google OAuth configured (optional)
 - [ ] Trigger.dev project created, all 4 jobs deployed
 - [ ] Trigger.dev environment variables set
 - [ ] Resend domain verified, API key created
 - [ ] All secrets set in Supabase (`RESEND_API_KEY`, `TRIGGER_SECRET_KEY`, `FROM_EMAIL`, `APP_URL`)
-- [ ] Frontend deployed to Vercel with correct env vars
-- [ ] Smoke test: sign up → create note → create task → set reminder
+- [ ] Frontend deployed to Vercel with `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY` set
+- [ ] Smoke test: sign up → create note → create task → set reminder → enable push notifications in Settings
 
 ---
 
