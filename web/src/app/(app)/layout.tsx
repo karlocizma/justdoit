@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { TopBar } from '@/components/layout/TopBar'
+import { AppShell } from '@/components/layout/AppShell'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -43,14 +44,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--jd-bg)' }}>
-      <Sidebar lists={mappedLists} user={userData} workspaces={workspaces} pendingInviteCount={pendingInviteCount} />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <TopBar user={userData} />
-        <main style={{ flex: 1, overflow: 'auto' }}>
-          {children}
-        </main>
+    <AppShell>
+      <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--jd-bg)' }}>
+        <Sidebar lists={mappedLists} user={userData} workspaces={workspaces} pendingInviteCount={pendingInviteCount} />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <TopBar user={userData} />
+          <main style={{ flex: 1, overflow: 'auto' }}>
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </AppShell>
   )
 }

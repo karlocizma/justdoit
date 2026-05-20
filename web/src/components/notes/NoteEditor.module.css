@@ -387,6 +387,58 @@
   font-style: italic;
 }
 
+/* Note linking */
+.contentWrap {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.linkDropdown {
+  position: absolute;
+  top: calc(100% - 8px);
+  left: 0;
+  z-index: 200;
+  background: var(--jd-surface);
+  border: 1px solid var(--jd-border);
+  border-radius: 8px;
+  box-shadow: var(--jd-shadow-md);
+  min-width: 220px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.linkItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--jd-fg-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background 80ms;
+}
+
+.linkItem:hover,
+.linkItem.linkItemActive {
+  background: var(--jd-surface-2);
+  color: var(--jd-fg);
+}
+
+.previewContent :global(.jd-wiki-missing) {
+  color: var(--jd-warn);
+  font-style: italic;
+  opacity: 0.7;
+}
+
 /* Word count footer */
 .footer {
   flex-shrink: 0;

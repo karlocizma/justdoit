@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { subscribeToPush, unsubscribeFromPush, isPushSubscribed } from '@/lib/push'
 import s from './SettingsView.module.css'
 
 type User = { id: string; email: string; display_name: string | null; avatar_url: string | null }
@@ -40,6 +41,18 @@ export function SettingsView({ user, memberships: initialMemberships, digestEnab
   // Digest
   const [digest, setDigest] = useState(initialDigest)
   const [digestSaving, setDigestSaving] = useState(false)
+
+  // Push notifications
+  const [pushEnabled, setPushEnabled] = useState(false)
+  const [pushSaving, setPushSaving] = useState(false)
+  const [pushSupported, setPushSupported] = useState(false)
+  const [pushMsg, setPushMsg] = useState('')
+
+  useEffect(() => {
+    const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
+    setPushSupported(supported)
+    if (supported) isPushSubscribed().then(setPushEnabled)
+  }, [])
 
   const acceptedWorkspaces = memberships.filter(m => m.accepted)
   const pendingInvites = memberships.filter(m => !m.accepted)
@@ -149,6 +162,28 @@ export function SettingsView({ user, memberships: initialMemberships, digestEnab
     } else {
       setExportMsg(data.reason ?? 'Export is not available right now.')
     }
+  }
+
+  async function togglePush() {
+    setPushSaving(true)
+    setPushMsg('')
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { setPushSaving(false); return }
+    if (pushEnabled) {
+      await unsubscribeFromPush(session.access_token)
+      setPushEnabled(false)
+      setPushMsg('Push notifications disabled.')
+    } else {
+      if (Notification.permission === 'denied') {
+        setPushMsg('Notifications are blocked in your browser. Please allow them in browser settings.')
+        setPushSaving(false)
+        return
+      }
+      const ok = await subscribeToPush(session.access_token)
+      if (ok) { setPushEnabled(true); setPushMsg('Push notifications enabled!') }
+      else setPushMsg('Could not enable notifications. Check browser permissions.')
+    }
+    setPushSaving(false)
   }
 
   async function toggleDigest() {
@@ -324,6 +359,37 @@ export function SettingsView({ user, memberships: initialMemberships, digestEnab
             </button>
           </div>
         </div>
+      </section>
+
+      {/* Push notifications */}
+      <section className={s.section}>
+        <h2 className={s.sectionTitle}>Push notifications</h2>
+        {!pushSupported ? (
+          <p className={s.exportDesc}>Your browser does not support push notifications.</p>
+        ) : (
+          <>
+            <div className={s.toggleRow}>
+              <div className={s.toggleInfo}>
+                <div className={s.toggleLabel}>Browser notifications</div>
+                <div className={s.toggleDesc}>Receive reminders and alerts as browser notifications, even when the app is in the background.</div>
+              </div>
+              <button
+                className={`${s.toggle} ${pushEnabled ? s.toggleOn : ''}`}
+                onClick={togglePush}
+                disabled={pushSaving}
+                aria-pressed={pushEnabled}
+              >
+                <span className={s.toggleThumb} />
+              </button>
+            </div>
+            {pushMsg && <div className={pushMsg.includes('enabled') ? s.success : s.error}>{pushMsg}</div>}
+            {!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && (
+              <div className={s.error} style={{ marginTop: 8 }}>
+                NEXT_PUBLIC_VAPID_PUBLIC_KEY is not set. Push notifications require VAPID keys — see the deployment guide.
+              </div>
+            )}
+          </>
+        )}
       </section>
 
       {/* Email preferences */}

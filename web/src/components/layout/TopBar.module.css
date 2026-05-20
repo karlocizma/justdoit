@@ -100,3 +100,22 @@
 }
 
 .avatar:hover { opacity: 0.85; }
+
+.themeBtn {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--jd-fg-muted);
+  transition: background 120ms, color 120ms;
+}
+
+.themeBtn:hover {
+  background: var(--jd-surface-2);
+  color: var(--jd-fg);
+}

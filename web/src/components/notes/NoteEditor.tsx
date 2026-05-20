@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { marked } from 'marked'
 import { createClient } from '@/lib/supabase/client'
+import { TemplateModal } from './TemplateModal'
 import type { Database } from '@/lib/database.types'
 import s from './NoteEditor.module.css'
 
@@ -27,6 +28,12 @@ export function NoteEditor({ note }: { note: Note }) {
   const [userTags, setUserTags] = useState<Tag[]>([])
   const [tagInput, setTagInput] = useState('')
   const [showTagPicker, setShowTagPicker] = useState(false)
+  const [showTemplates, setShowTemplates] = useState(false)
+  // Note linking state
+  const [linkSearch, setLinkSearch] = useState<string | null>(null)
+  const [linkNotes, setLinkNotes] = useState<{ id: string; title: string }[]>([])
+  const [linkIndex, setLinkIndex] = useState(0)
+  const [allNotes, setAllNotes] = useState<{ id: string; title: string }[]>([])
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const tagPickerRef = useRef<HTMLDivElement>(null)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -39,10 +46,29 @@ export function NoteEditor({ note }: { note: Note }) {
     }
   }, [content])
 
+  // Load all note titles once (for linking)
+  useEffect(() => {
+    supabase.from('notes').select('id, title').is('deleted_at', null).eq('is_archived', false)
+      .then(({ data }) => setAllNotes((data ?? []).filter(n => n.id !== note.id)))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Build a title→id map for the preview renderer
+  const noteTitleMap = useMemo(() => {
+    const m: Record<string, string> = {}
+    for (const n of allNotes) if (n.title) m[n.title.toLowerCase()] = n.id
+    return m
+  }, [allNotes])
+
   const previewHtml = useMemo(() => {
     if (mode !== 'preview') return ''
-    return marked(content) as string
-  }, [content, mode])
+    // Replace [[Title]] with links before passing to marked
+    const linked = (content as string).replace(/\[\[([^\]]+)\]\]/g, (_match, title: string) => {
+      const id = noteTitleMap[title.toLowerCase()]
+      if (id) return `[${title}](/notes/${id})`
+      return `<span class="jd-wiki-missing">[[${title}]]</span>`
+    })
+    return marked(linked) as string
+  }, [content, mode, noteTitleMap])
 
   const save = useCallback(async (patch: NoteUpdate) => {
     setSaving(true)
@@ -168,6 +194,37 @@ export function NoteEditor({ note }: { note: Note }) {
     t => !tags.some(nt => nt.id === t.id) && t.name.toLowerCase().includes(tagInput.toLowerCase())
   )
 
+  function detectLinkTrigger(value: string, cursorPos: number) {
+    const before = value.slice(0, cursorPos)
+    const match = before.match(/\[\[([^\][]*)$/)
+    if (match) {
+      const query = match[1]
+      setLinkSearch(query)
+      const filtered = allNotes.filter(n =>
+        n.title && n.title.toLowerCase().includes(query.toLowerCase())
+      ).slice(0, 8)
+      setLinkNotes(filtered)
+      setLinkIndex(0)
+    } else {
+      setLinkSearch(null)
+    }
+  }
+
+  function insertNoteLink(n: { id: string; title: string }) {
+    const ta = textareaRef.current
+    if (!ta) return
+    const before = content.slice(0, ta.selectionStart)
+    const after = content.slice(ta.selectionStart)
+    // Replace the partial [[query with [[Full Title]]
+    const replaced = before.replace(/\[\[([^\][]*)$/, `[[${n.title}]]`)
+    const newContent = replaced + after
+    setContent(newContent)
+    scheduleSave({ content: newContent })
+    setLinkSearch(null)
+    const newPos = replaced.length
+    requestAnimationFrame(() => { ta.focus(); ta.setSelectionRange(newPos, newPos) })
+  }
+
   return (
     <div className={s.root}>
       <div className={s.toolbar}>
@@ -213,6 +270,8 @@ export function NoteEditor({ note }: { note: Note }) {
           <span className={s.fmtSep} />
           <button className={s.fmtBtn} onClick={() => insertFormat('ul')}>• List</button>
           <button className={s.fmtBtn} onClick={() => insertFormat('quote')}>&ldquo; Quote</button>
+          <span className={s.fmtSep} />
+          <button className={s.fmtBtn} onClick={() => setShowTemplates(true)}>Templates</button>
         </div>
       )}
 
@@ -227,13 +286,40 @@ export function NoteEditor({ note }: { note: Note }) {
         />
 
         {mode === 'edit' ? (
+          <div className={s.contentWrap}>
           <textarea
             ref={textareaRef}
             className={s.contentArea}
-            placeholder="Start writing… (Markdown supported)"
+            placeholder="Start writing… (Markdown supported, [[ to link notes)"
             value={content}
-            onChange={e => { setContent(e.target.value); scheduleSave({ content: e.target.value }) }}
+            onChange={e => {
+              const val = e.target.value
+              setContent(val)
+              scheduleSave({ content: val })
+              detectLinkTrigger(val, e.target.selectionStart)
+            }}
+            onKeyDown={e => {
+              if (linkSearch === null) return
+              if (e.key === 'ArrowDown') { e.preventDefault(); setLinkIndex(i => Math.min(i + 1, linkNotes.length - 1)) }
+              else if (e.key === 'ArrowUp') { e.preventDefault(); setLinkIndex(i => Math.max(i - 1, 0)) }
+              else if (e.key === 'Enter' && linkNotes.length > 0) { e.preventDefault(); insertNoteLink(linkNotes[linkIndex]) }
+              else if (e.key === 'Escape') { setLinkSearch(null) }
+            }}
           />
+          {linkSearch !== null && linkNotes.length > 0 && (
+            <div className={s.linkDropdown}>
+              {linkNotes.map((n, i) => (
+                <button
+                  key={n.id}
+                  className={`${s.linkItem} ${i === linkIndex ? s.linkItemActive : ''}`}
+                  onMouseDown={() => insertNoteLink(n)}
+                >
+                  <LinkIcon /> {n.title || 'Untitled'}
+                </button>
+              ))}
+            </div>
+          )}
+          </div>
         ) : (
           <div
             className={s.previewContent}
@@ -286,6 +372,17 @@ export function NoteEditor({ note }: { note: Note }) {
           {words} word{words !== 1 ? 's' : ''} · {chars} character{chars !== 1 ? 's' : ''}
         </span>
       </div>
+
+      {showTemplates && (
+        <TemplateModal
+          hasContent={content.trim().length > 0}
+          onSelect={newContent => {
+            setContent(newContent)
+            scheduleSave({ content: newContent })
+          }}
+          onClose={() => setShowTemplates(false)}
+        />
+      )}
     </div>
   )
 }
@@ -294,3 +391,4 @@ function ChevronLeftIcon() { return <svg width="14" height="14" viewBox="0 0 24 
 function PinIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> }
 function ArchiveIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg> }
 function TrashIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg> }
+function LinkIcon() { return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg> }
