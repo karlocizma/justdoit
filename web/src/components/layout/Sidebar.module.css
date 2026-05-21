@@ -249,6 +249,51 @@
 .menuItem.danger { color: var(--jd-danger); }
 .menuItem.danger:hover { background: rgba(224,92,92,0.12); }
 
+.sortableRow {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 1px 0;
+  border-radius: 6px;
+  transition: background 120ms;
+}
+
+.sortableRow:hover { background: var(--jd-surface-2); }
+.sortableRow.active { background: var(--jd-accent-soft); }
+
+.sortableLink {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 4px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--jd-fg-muted);
+  text-decoration: none;
+  min-width: 0;
+}
+
+.sortableRow.active .sortableLink { color: var(--jd-fg); }
+.sortableRow:hover .sortableLink { color: var(--jd-fg); }
+
+.listDragHandle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 28px;
+  flex-shrink: 0;
+  color: var(--jd-fg-faint);
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 120ms;
+  padding-left: 4px;
+}
+
+.sortableRow:hover .listDragHandle { opacity: 1; }
+.listDragHandle:active { cursor: grabbing; }
+
 .inviteBadge {
   background: var(--jd-accent);
   color: #fff;

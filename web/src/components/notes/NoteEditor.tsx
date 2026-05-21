@@ -249,6 +249,7 @@ export function NoteEditor({ note }: { note: Note }) {
           </div>
           <button className={s.toolBtn} onClick={archive} title="Archive"><ArchiveIcon /></button>
           <button className={`${s.toolBtn} ${s.danger}`} onClick={trash} title="Trash"><TrashIcon /></button>
+          <button className={s.toolBtn} onClick={() => exportNote(title, content)} title="Download as .md"><DownloadIcon /></button>
           <div className={s.modeTabs}>
             <button className={`${s.modeTab} ${mode === 'edit' ? s.modeActive : ''}`} onClick={() => setMode('edit')}>Edit</button>
             <button className={`${s.modeTab} ${mode === 'preview' ? s.modeActive : ''}`} onClick={() => setMode('preview')}>Preview</button>
@@ -387,8 +388,20 @@ export function NoteEditor({ note }: { note: Note }) {
   )
 }
 
+function exportNote(noteTitle: string, noteContent: string) {
+  const md = `# ${noteTitle}\n\n${noteContent}`
+  const blob = new Blob([md], { type: 'text/markdown' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${noteTitle || 'note'}.md`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 function ChevronLeftIcon() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg> }
 function PinIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> }
 function ArchiveIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg> }
 function TrashIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg> }
 function LinkIcon() { return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg> }
+function DownloadIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> }

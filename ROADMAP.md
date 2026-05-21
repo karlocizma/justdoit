@@ -25,16 +25,6 @@ Allow the app to work without an internet connection and sync automatically when
 ### Progressive Web App (PWA)
 Installable from the browser on desktop and mobile. Pairs directly with offline mode — the service worker needed for offline caching also enables PWA install prompts. Requires a Web App Manifest and icon set.
 
-### Drag-and-Drop Reorder
-- Reorder tasks within a list by dragging (DB already has `sort_order` column and `reorder_tasks` RPC)
-- Reorder lists in the sidebar
-- Reorder notes in the notes grid (pin is the current proxy for this)
-
-### Export Enhancements
-- Download individual notes as `.md` files directly from the editor (no email required)
-- Export a full list as Markdown or CSV
-- Notion-compatible JSON import
-
 ### Custom Note Templates
 Users can save any note as a personal template. Currently 6 built-in templates exist; this adds user-defined templates stored in `profiles.settings`.
 
@@ -73,6 +63,8 @@ Notes can have a `due_at` timestamp alongside tasks. Appears in the calendar vie
 ## Completed
 
 ### Frontend Features
+- [x] **Drag-and-drop reorder** — tasks within a list (grip handle + dnd-kit), lists in the sidebar, notes in the grid; all persisted via Supabase RPCs (`reorder_tasks`, `reorder_todo_lists`, `reorder_notes`)
+- [x] **Export enhancements** — download individual notes as `.md` from the editor; export a list as Markdown or CSV; import notes from `.md` / `.txt` / `.json` files
 - [x] Next.js 16 frontend with full auth flow (email/password, OAuth)
 - [x] **Dark / light theme toggle** — Sun/Moon button in TopBar, persists to localStorage, no-flash inline script
 - [x] **Calendar view** — `/calendar` route with monthly grid, priority-colour dots, side panel for day's tasks

@@ -199,3 +199,75 @@
 }
 
 .doneToggle:hover { color: var(--jd-fg); }
+
+.dragHandle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--jd-fg-faint);
+  cursor: grab;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 120ms;
+}
+
+.row:hover .dragHandle { opacity: 1; }
+.dragHandle:active { cursor: grabbing; }
+
+.exportWrap {
+  position: relative;
+  margin-left: auto;
+}
+
+.exportBtn {
+  background: transparent;
+  border: 1px solid var(--jd-border);
+  border-radius: 6px;
+  padding: 5px 8px;
+  color: var(--jd-fg-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background 120ms, color 120ms;
+}
+
+.exportBtn:hover { background: var(--jd-surface); color: var(--jd-fg); }
+
+.exportOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+}
+
+.exportMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 100;
+  background: var(--jd-surface-raised);
+  border: 1px solid var(--jd-border);
+  border-radius: 8px;
+  padding: 4px;
+  min-width: 180px;
+  box-shadow: var(--jd-shadow-lg);
+}
+
+.exportItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--jd-fg);
+  cursor: pointer;
+  border-radius: 5px;
+  font-family: inherit;
+  transition: background 100ms;
+}
+
+.exportItem:hover { background: var(--jd-surface-hover); }

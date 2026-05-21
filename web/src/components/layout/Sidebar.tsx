@@ -3,6 +3,21 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
+import {
+  DndContext,
+  DragEndEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { createClient } from '@/lib/supabase/client'
 import s from './Sidebar.module.css'
 
@@ -10,7 +25,7 @@ type List = { id: string; title: string; color: string; open_count: number }
 type Workspace = { id: string; name: string }
 type User = { email: string; name?: string }
 
-export function Sidebar({ lists, user, workspaces = [], pendingInviteCount = 0 }: {
+export function Sidebar({ lists: initialLists, user, workspaces = [], pendingInviteCount = 0 }: {
   lists: List[]
   user: User
   workspaces?: Workspace[]
@@ -19,10 +34,12 @@ export function Sidebar({ lists, user, workspaces = [], pendingInviteCount = 0 }
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  const [lists, setLists] = useState(initialLists)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 })
   const footerRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
   const initial = (user.name ?? user.email).slice(0, 2).toUpperCase()
 
@@ -51,6 +68,17 @@ export function Sidebar({ lists, user, workspaces = [], pendingInviteCount = 0 }
     router.refresh()
   }
 
+  async function handleListDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIndex = lists.findIndex(l => l.id === active.id)
+    const newIndex = lists.findIndex(l => l.id === over.id)
+    const reordered = arrayMove(lists, oldIndex, newIndex)
+    setLists(reordered)
+    const updates = reordered.map((l, i) => ({ id: l.id, sort_order: i }))
+    await supabase.rpc('reorder_todo_lists', { updates })
+  }
+
   const nav = (href: string) => `${s.navItem}${pathname === href || pathname.startsWith(href + '/') ? ' ' + s.active : ''}`
 
   return (
@@ -77,19 +105,19 @@ export function Sidebar({ lists, user, workspaces = [], pendingInviteCount = 0 }
 
         <div className={s.section}>Personal</div>
         <div className={s.scrollLists}>
-          <div className={s.navList}>
-            {lists.map(l => (
-              <Link key={l.id} href={`/lists/${l.id}`} className={nav(`/lists/${l.id}`)}>
-                <span className={s.navColor} style={{ background: l.color }} />
-                <span className={s.navLabel}>{l.title}</span>
-                {l.open_count > 0 && <span className={s.navCount}>{l.open_count}</span>}
-              </Link>
-            ))}
-            <Link href="/lists/new" className={s.navItem}>
-              <span className={s.navIcon}><PlusIcon /></span>
-              <span className={s.navLabel} style={{ color: 'var(--jd-fg-dim)' }}>New list</span>
-            </Link>
-          </div>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleListDragEnd}>
+            <SortableContext items={lists.map(l => l.id)} strategy={verticalListSortingStrategy}>
+              <div className={s.navList}>
+                {lists.map(l => (
+                  <SortableListItem key={l.id} list={l} isActive={pathname === `/lists/${l.id}` || pathname.startsWith(`/lists/${l.id}/`)} />
+                ))}
+                <Link href="/lists/new" className={s.navItem}>
+                  <span className={s.navIcon}><PlusIcon /></span>
+                  <span className={s.navLabel} style={{ color: 'var(--jd-fg-dim)' }}>New list</span>
+                </Link>
+              </div>
+            </SortableContext>
+          </DndContext>
         </div>
 
         {workspaces.length > 0 && (
@@ -158,6 +186,26 @@ export function Sidebar({ lists, user, workspaces = [], pendingInviteCount = 0 }
   )
 }
 
+function SortableListItem({ list, isActive }: { list: List; isActive: boolean }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: list.id })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className={`${s.sortableRow} ${isActive ? s.active : ''}`}>
+      <span className={s.listDragHandle} {...attributes} {...listeners}><GripSmIcon /></span>
+      <Link href={`/lists/${list.id}`} className={s.sortableLink}>
+        <span className={s.navColor} style={{ background: list.color }} />
+        <span className={s.navLabel}>{list.title}</span>
+        {list.open_count > 0 && <span className={s.navCount}>{list.open_count}</span>}
+      </Link>
+    </div>
+  )
+}
+
 function BrandLogo() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
@@ -194,3 +242,4 @@ function TrashIcon() { return <svg width="16" height="16" viewBox="0 0 24 24" fi
 function SettingsIcon() { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg> }
 function ChevronUpIcon() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg> }
 function CalendarIcon() { return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> }
+function GripSmIcon() { return <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="7" r="1.2" fill="currentColor"/><circle cx="15" cy="7" r="1.2" fill="currentColor"/><circle cx="9" cy="13" r="1.2" fill="currentColor"/><circle cx="15" cy="13" r="1.2" fill="currentColor"/><circle cx="9" cy="19" r="1.2" fill="currentColor"/><circle cx="15" cy="19" r="1.2" fill="currentColor"/></svg> }
