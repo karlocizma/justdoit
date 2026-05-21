@@ -62,9 +62,9 @@ After `db push` succeeds, go to **Table Editor** in the dashboard — you should
 supabase functions deploy
 ```
 
-This deploys all 8 functions: `dashboard`, `search`, `export`, `reminder-webhook`, `reminder-cancel`, `workspace-invite`, `push-subscribe`, `push-send`.
+This deploys all 9 functions: `dashboard`, `search`, `export`, `reminder-webhook`, `reminder-cancel`, `workspace-invite`, `push-subscribe`, `push-send`, `ai`.
 
-Verify in the dashboard: **Edge Functions** — all 8 should be listed.
+Verify in the dashboard: **Edge Functions** — all 9 should be listed.
 
 ### 1.5 Generate VAPID keys for push notifications
 
@@ -92,6 +92,9 @@ supabase secrets set \
   VAPID_PUBLIC_KEY=<your-vapid-public-key> \
   VAPID_PRIVATE_KEY=<your-vapid-private-key> \
   VAPID_SUBJECT=mailto:noreply@yourdomain.com
+# Optional: set a shared Anthropic key to enable AI features for all users.
+# Individual users can also add their own key in Settings → AI.
+# supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxxx
 ```
 
 You can run this again any time to update a value.
@@ -230,6 +233,7 @@ Your frontend URL is `https://your-project.vercel.app` (or a custom domain if yo
 | `VAPID_PUBLIC_KEY` | Supabase secrets | Generated in step 1.5 |
 | `VAPID_PRIVATE_KEY` | Supabase secrets | Generated in step 1.5 — never expose |
 | `VAPID_SUBJECT` | Supabase secrets | `mailto:noreply@yourdomain.com` |
+| `ANTHROPIC_API_KEY` | Supabase secrets (optional) | [console.anthropic.com](https://console.anthropic.com) — enables AI for all users; users can also add their own key in Settings |
 
 ---
 
@@ -237,7 +241,7 @@ Your frontend URL is `https://your-project.vercel.app` (or a custom domain if yo
 
 - [ ] Supabase project created
 - [ ] `supabase db push` ran successfully (all 10 tables visible in Table Editor)
-- [ ] All 8 edge functions deployed (`supabase functions deploy`)
+- [ ] All 9 edge functions deployed (`supabase functions deploy`)
 - [ ] VAPID key pair generated (`npx web-push generate-vapid-keys`)
 - [ ] VAPID keys set as Supabase secrets (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`)
 - [ ] Supabase Auth Site URL and redirect URLs set

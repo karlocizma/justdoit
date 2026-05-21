@@ -67,7 +67,7 @@ The API is entirely Supabase — no custom HTTP server:
 
 - **PostgREST** (`/rest/v1/*`) — auto-generated CRUD for all tables, gated by Row Level Security
 - **Auth** (`/auth/v1`) — email/password + GitHub/Google OAuth via GoTrue
-- **Edge Functions** (Deno, `supabase/functions/`) — custom logic: `dashboard`, `search`, `export`, `reminder-webhook`, `reminder-cancel`, `workspace-invite`; each shares `_shared/cors.ts`
+- **Edge Functions** (Deno, `supabase/functions/`) — custom logic: `dashboard`, `search`, `export`, `reminder-webhook`, `reminder-cancel`, `workspace-invite`, `ai`; each shares `_shared/cors.ts`
 - **Realtime** — tables `notes`, `tasks`, `todo_lists`, `workspace_members` published via WebSocket
 - **Storage** — `note-attachments` (5 MB/file) and `exports` (100 MB/file) buckets
 
@@ -118,6 +118,7 @@ Local Supabase URLs (from `supabase start`):
 | `SUPABASE_SERVICE_ROLE_KEY` | server-side only, never expose to client |
 | `TRIGGER_SECRET_KEY` | trigger jobs + Edge Functions |
 | `RESEND_API_KEY` | trigger jobs + Edge Functions |
+| `ANTHROPIC_API_KEY` | `ai` Edge Function (optional — falls back to per-user key in `profiles.settings`) |
 
 ## Reference Docs
 

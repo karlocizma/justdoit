@@ -2,7 +2,7 @@
 
 **Notes & Tasks, done right.**
 
-A full-stack productivity app — Markdown notes with tags, to-do lists with sub-tasks, reminders, recurring tasks, file attachments, shared workspaces, real-time sync, calendar view, browser push notifications, and more.
+A full-stack productivity app — Markdown notes with tags, to-do lists with sub-tasks, reminders, recurring tasks, file attachments, shared workspaces, real-time sync, calendar view, browser push notifications, AI-powered note summarization, tag suggestions, task extraction, smart search, and more.
 
 This is a **monorepo** containing the complete application:
 
@@ -37,7 +37,7 @@ This is a **monorepo** containing the complete application:
 │  ┌──────────────────────────────────────────────────────────────────┐  │
 │  │  Edge Functions (Deno)                                           │  │
 │  │  dashboard · search · export · reminder-webhook                  │  │
-│  │  reminder-cancel · workspace-invite                              │  │
+│  │  reminder-cancel · workspace-invite · ai                         │  │
 │  └──────────────────────────────────────────────────────────────────┘  │
 └────────────────────────────────────────────────────────────────────────┘
                            │ Trigger.dev SDK
@@ -174,7 +174,8 @@ justdoit/
 │       ├── export/
 │       ├── reminder-webhook/
 │       ├── reminder-cancel/
-│       └── workspace-invite/
+│       ├── workspace-invite/
+│       └── ai/
 ├── trigger/
 │   └── jobs/
 │       ├── email-auth.ts
@@ -229,6 +230,7 @@ See [`docs/api-reference.md`](docs/api-reference.md) for complete documentation.
 | Edge Fn | `POST /functions/v1/workspace-invite` | Invite a user to a workspace |
 | Edge Fn | `POST /functions/v1/push-subscribe` | Save or remove a browser push subscription |
 | Edge Fn | `POST /functions/v1/push-send` | Send a push notification to a user's devices |
+| Edge Fn | `POST /functions/v1/ai` | AI actions: `summarize`, `suggest-tags`, `generate-tasks`, `smart-search` (proxies to Anthropic) |
 
 ---
 
@@ -241,7 +243,7 @@ See [`docs/deployment.md`](docs/deployment.md) for the full production checklist
 Short version:
 1. Create a Supabase project at [supabase.com](https://supabase.com)
 2. Push migrations: `supabase db push`
-3. Deploy Edge Functions: `supabase functions deploy` (8 functions)
+3. Deploy Edge Functions: `supabase functions deploy` (9 functions)
 4. Generate VAPID keys: `npx web-push generate-vapid-keys`
 5. Set Edge Function secrets: `supabase secrets set RESEND_API_KEY=... TRIGGER_SECRET_KEY=... VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:...`
 6. Deploy Trigger.dev jobs: `cd trigger && npm run deploy`
@@ -268,6 +270,7 @@ See `.env.example` for the full list.
 | `VAPID_PUBLIC_KEY` | No* | Push notifications require this (Supabase secrets) |
 | `VAPID_PRIVATE_KEY` | No* | Push notifications require this (Supabase secrets) |
 | `VAPID_SUBJECT` | No* | `mailto:` address for VAPID identification |
+| `ANTHROPIC_API_KEY` | No* | Supabase secret — enables AI features for all users; individual users can also set their own key in Settings → AI |
 
 *Graceful degradation: the app works without these, but the relevant feature won't function. Generate VAPID keys with `npx web-push generate-vapid-keys`.
 
