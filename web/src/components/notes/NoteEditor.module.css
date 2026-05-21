@@ -603,3 +603,211 @@
   color: var(--jd-fg-dim);
   padding: 4px 0;
 }
+
+/* AI format bar buttons */
+.aiFmtBtn {
+  color: var(--jd-accent);
+  opacity: 0.85;
+}
+
+.aiFmtBtn:hover { opacity: 1; background: var(--jd-accent-soft); color: var(--jd-accent); }
+.aiFmtBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* AI panel */
+.aiPanel {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--jd-border-soft);
+  background: var(--jd-surface);
+  padding: 12px 20px 14px;
+}
+
+.aiError {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 20px;
+  border-bottom: 1px solid rgba(224,92,92,0.2);
+  background: rgba(224,92,92,0.08);
+  font-size: 13px;
+  color: var(--jd-danger);
+}
+
+.aiPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.aiPanelLabel {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--jd-accent);
+}
+
+.aiDismiss {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--jd-fg-dim);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: background 100ms, color 100ms;
+  flex-shrink: 0;
+}
+
+.aiDismiss:hover { background: var(--jd-surface-2); color: var(--jd-fg); }
+
+.aiSummaryText {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--jd-fg-muted);
+  margin: 0;
+}
+
+.aiEmpty {
+  font-size: 13px;
+  color: var(--jd-fg-dim);
+}
+
+/* Tag suggestions */
+.aiTagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.aiTagChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--jd-accent);
+  background: transparent;
+  color: var(--jd-accent);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms;
+}
+
+.aiTagChip:hover { background: var(--jd-accent-soft); }
+
+.aiTagChip.aiTagAdded {
+  background: var(--jd-accent-soft);
+  border-color: transparent;
+  color: var(--jd-accent);
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Task extraction */
+.aiTaskSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.aiTaskList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.aiTaskItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--jd-border-soft);
+}
+
+.aiTaskBullet {
+  font-size: 12px;
+  color: var(--jd-accent);
+  flex-shrink: 0;
+  width: 14px;
+  text-align: center;
+}
+
+.aiTaskTitle {
+  flex: 1;
+  font-size: 13px;
+  color: var(--jd-fg);
+}
+
+.aiTaskTitle.aiTaskDone {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.aiAddSingleBtn {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--jd-border);
+  background: transparent;
+  color: var(--jd-fg-muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 100ms, color 100ms, border-color 100ms;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.aiAddSingleBtn:hover:not(:disabled) { background: var(--jd-accent-soft); color: var(--jd-accent); border-color: var(--jd-accent); }
+.aiAddSingleBtn:disabled { opacity: 0.4; cursor: default; }
+
+.aiTaskActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.aiListSelect {
+  flex: 1;
+  background: var(--jd-surface);
+  border: 1px solid var(--jd-border);
+  border-radius: 6px;
+  padding: 5px 8px;
+  color: var(--jd-fg);
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 120ms;
+}
+
+.aiListSelect:focus { border-color: var(--jd-accent); }
+
+.aiAddAllBtn {
+  padding: 5px 14px;
+  border-radius: 6px;
+  border: none;
+  background: var(--jd-accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: opacity 120ms;
+}
+
+.aiAddAllBtn:hover:not(:disabled) { opacity: 0.85; }
+.aiAddAllBtn:disabled { opacity: 0.4; cursor: default; }

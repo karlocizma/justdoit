@@ -30,14 +30,6 @@ Installable from the browser on desktop and mobile. Pairs directly with offline 
 
 ## Considering
 
-### AI Features
-- **Summarize note** — one-click summary of a long note using the Claude API
-- **Suggest tags** — automatically propose tags based on note content
-- **Generate task list** — extract action items from a note as tasks
-- **Smart search** — natural language query ("show me notes about the Berlin trip") instead of keyword search
-
-These would call a new Edge Function that proxies to the Anthropic API with the user's note content. Requires an `ANTHROPIC_API_KEY` secret.
-
 ### Mobile App
 A React Native app sharing auth and data with the same Supabase backend. The API is already fully in place. Offline mode (above) is a prerequisite for a good mobile experience.
 
@@ -46,6 +38,7 @@ A React Native app sharing auth and data with the same Supabase backend. The API
 ## Completed
 
 ### Frontend Features
+- [x] **AI features** — `supabase/functions/ai` Edge Function proxying to Anthropic (`claude-haiku-4-5`) with 4 actions: summarize note, suggest tags, generate task list, smart search (natural language query); AI buttons in NoteEditor format bar; smart search toggle in search results; requires `ANTHROPIC_API_KEY` Supabase secret
 - [x] **Shared workspace improvements** — role management UI (owners can promote/demote/remove members), role badges (owner/admin/member), recent activity feed per workspace
 - [x] **Due dates on notes** — `due_at` column on `notes`, date-time picker in NoteEditor toolbar with clear button and relative label; notes appear on the Calendar
 - [x] **Calendar enhancements** — Month/Week view toggle; notes with due dates shown as diamond dots alongside task dots; drag-and-drop to reschedule tasks and notes onto different days (updates DB on drop)

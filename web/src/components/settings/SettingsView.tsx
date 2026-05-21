@@ -9,10 +9,11 @@ import s from './SettingsView.module.css'
 type User = { id: string; email: string; display_name: string | null; avatar_url: string | null }
 type Membership = { workspaceId: string; workspaceName: string; role: string; accepted: boolean }
 
-export function SettingsView({ user, memberships: initialMemberships, digestEnabled: initialDigest }: {
+export function SettingsView({ user, memberships: initialMemberships, digestEnabled: initialDigest, hasApiKey: initialHasApiKey }: {
   user: User
   memberships: Membership[]
   digestEnabled: boolean
+  hasApiKey: boolean
 }) {
   const router = useRouter()
   const supabase = createClient()
@@ -41,6 +42,12 @@ export function SettingsView({ user, memberships: initialMemberships, digestEnab
   // Digest
   const [digest, setDigest] = useState(initialDigest)
   const [digestSaving, setDigestSaving] = useState(false)
+
+  // AI key
+  const [currentHasKey, setCurrentHasKey] = useState(initialHasApiKey)
+  const [apiKey, setApiKey] = useState('')
+  const [apiKeySaving, setApiKeySaving] = useState(false)
+  const [apiKeyMsg, setApiKeyMsg] = useState('')
 
   // Push notifications
   const [pushEnabled, setPushEnabled] = useState(false)
@@ -186,12 +193,44 @@ export function SettingsView({ user, memberships: initialMemberships, digestEnab
     setPushSaving(false)
   }
 
+  async function mergeSettings(patch: Record<string, unknown>) {
+    const { data: profile } = await supabase.from('profiles').select('settings').eq('id', user.id).single()
+    const merged = { ...(profile?.settings as Record<string, unknown> ?? {}), ...patch }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await supabase.from('profiles').update({ settings: merged as any }).eq('id', user.id)
+  }
+
   async function toggleDigest() {
     const next = !digest
     setDigestSaving(true)
-    await supabase.from('profiles').update({ settings: { digest_enabled: next } }).eq('id', user.id)
+    await mergeSettings({ digest_enabled: next })
     setDigestSaving(false)
     setDigest(next)
+  }
+
+  async function saveApiKey(e: React.FormEvent) {
+    e.preventDefault()
+    if (!apiKey.trim()) return
+    setApiKeySaving(true)
+    setApiKeyMsg('')
+    await mergeSettings({ anthropic_api_key: apiKey.trim() })
+    setApiKeySaving(false)
+    setCurrentHasKey(true)
+    setApiKey('')
+    setApiKeyMsg('API key saved.')
+  }
+
+  async function removeApiKey() {
+    setApiKeySaving(true)
+    setApiKeyMsg('')
+    const { data: profile } = await supabase.from('profiles').select('settings').eq('id', user.id).single()
+    const settings = { ...(profile?.settings as Record<string, unknown> ?? {}) }
+    delete settings['anthropic_api_key']
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await supabase.from('profiles').update({ settings: settings as any }).eq('id', user.id)
+    setApiKeySaving(false)
+    setCurrentHasKey(false)
+    setApiKeyMsg('API key removed.')
   }
 
   return (
@@ -409,6 +448,42 @@ export function SettingsView({ user, memberships: initialMemberships, digestEnab
             <span className={s.toggleThumb} />
           </button>
         </div>
+      </section>
+
+      {/* AI */}
+      <section className={s.section}>
+        <h2 className={s.sectionTitle}>AI</h2>
+        <p className={s.exportDesc}>
+          Enable AI features (note summarization, tag suggestions, task extraction, smart search) with your own{' '}
+          <a className={s.link} href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer">
+            Anthropic API key
+          </a>. The key is stored in your account and used server-side only.
+        </p>
+        {apiKeyMsg && (
+          <div className={apiKeyMsg.startsWith('Failed') ? s.error : s.success}>{apiKeyMsg}</div>
+        )}
+        {currentHasKey && (
+          <div className={s.apiKeyStatus}>
+            <span className={s.apiKeyConfigured}>API key configured ✓</span>
+            <button className={s.leaveBtn} onClick={removeApiKey} disabled={apiKeySaving}>Remove</button>
+          </div>
+        )}
+        <form onSubmit={saveApiKey} className={s.form} style={{ marginTop: currentHasKey ? 12 : 0 }}>
+          <div className={s.field}>
+            <label className={s.label}>{currentHasKey ? 'Replace key' : 'API key'}</label>
+            <input
+              className={s.input}
+              type="password"
+              placeholder="sk-ant-..."
+              value={apiKey}
+              onChange={e => setApiKey(e.target.value)}
+              autoComplete="off"
+            />
+          </div>
+          <button className={s.saveBtn} type="submit" disabled={apiKeySaving || !apiKey.trim()}>
+            {apiKeySaving ? 'Saving…' : 'Save key'}
+          </button>
+        </form>
       </section>
 
       {/* Export */}

@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { TemplateModal } from './TemplateModal'
 import type { Template } from './TemplateModal'
 import type { Database } from '@/lib/database.types'
+import { summarizeNote, suggestTags, generateTasks } from '@/lib/ai'
 import s from './NoteEditor.module.css'
 
 type NoteUpdate = Database['public']['Tables']['notes']['Update']
@@ -38,6 +39,17 @@ export function NoteEditor({ note }: { note: Note }) {
   // Backlinks
   const [backlinks, setBacklinks] = useState<{ id: string; title: string }[]>([])
   const [backlinksOpen, setBacklinksOpen] = useState(false)
+  // AI features
+  type AiResult =
+    | { type: 'summary'; text: string }
+    | { type: 'tags'; tags: string[] }
+    | { type: 'tasks'; tasks: string[] }
+  const [aiLoading, setAiLoading] = useState<'summarize' | 'suggest-tags' | 'generate-tasks' | null>(null)
+  const [aiResult, setAiResult] = useState<AiResult | null>(null)
+  const [aiError, setAiError] = useState<string | null>(null)
+  const [addedTaskIndices, setAddedTaskIndices] = useState<Set<number>>(new Set())
+  const [todoLists, setTodoLists] = useState<{ id: string; title: string; color: string | null }[]>([])
+  const [aiTaskListId, setAiTaskListId] = useState('')
   // Note linking state
   const [linkSearch, setLinkSearch] = useState<string | null>(null)
   const [linkNotes, setLinkNotes] = useState<{ id: string; title: string }[]>([])
@@ -237,6 +249,92 @@ export function NoteEditor({ note }: { note: Note }) {
     await updateTemplatesInProfile(updated)
   }
 
+  async function handleSummarize() {
+    if (!content.trim()) return
+    setAiLoading('summarize'); setAiResult(null); setAiError(null)
+    try {
+      const text = await summarizeNote(title, content)
+      setAiResult({ type: 'summary', text })
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : 'Summarize failed')
+    } finally {
+      setAiLoading(null)
+    }
+  }
+
+  async function handleSuggestTags() {
+    if (!content.trim()) return
+    setAiLoading('suggest-tags'); setAiResult(null); setAiError(null)
+    try {
+      const tags = await suggestTags(title, content)
+      setAiResult({ type: 'tags', tags })
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : 'Tag suggestion failed')
+    } finally {
+      setAiLoading(null)
+    }
+  }
+
+  async function handleGenerateTasks() {
+    if (!content.trim()) return
+    setAiError(null)
+    let lists = todoLists
+    if (lists.length === 0) {
+      const { data } = await supabase
+        .from('todo_lists').select('id, title, color')
+        .eq('is_archived', false).order('sort_order')
+      lists = data ?? []
+      setTodoLists(lists)
+      if (lists.length > 0 && !aiTaskListId) setAiTaskListId(lists[0].id)
+    }
+    setAiLoading('generate-tasks'); setAiResult(null)
+    try {
+      const tasks = await generateTasks(title, content)
+      setAiResult({ type: 'tasks', tasks })
+      setAddedTaskIndices(new Set())
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : 'Task generation failed')
+    } finally {
+      setAiLoading(null)
+    }
+  }
+
+  async function addAiTagToNote(tagName: string) {
+    const normalized = tagName.toLowerCase().trim()
+    if (tags.some(t => t.name.toLowerCase() === normalized)) return
+    const { data: found } = await supabase.from('tags').select('id, name, color').ilike('name', normalized).limit(1)
+    const existing = found?.[0]
+    if (existing) {
+      await supabase.from('note_tags').insert({ note_id: note.id, tag_id: existing.id })
+      setTags(prev => [...prev, existing])
+      setUserTags(prev => prev.some(t => t.id === existing.id) ? prev : [...prev, existing])
+    } else {
+      const { data: newTag } = await supabase
+        .from('tags').insert({ name: normalized, color: '#6c63ff' }).select('id, name, color').single()
+      if (newTag) {
+        await supabase.from('note_tags').insert({ note_id: note.id, tag_id: newTag.id })
+        setTags(prev => [...prev, newTag])
+        setUserTags(prev => [...prev, newTag])
+      }
+    }
+  }
+
+  async function addAiTask(taskTitle: string, idx: number) {
+    const listId = aiTaskListId || todoLists[0]?.id
+    if (!listId) return
+    await supabase.from('tasks').insert({ title: taskTitle, list_id: listId, sort_order: 9999 })
+    setAddedTaskIndices(prev => new Set([...prev, idx]))
+  }
+
+  async function addAllAiTasks(tasks: string[]) {
+    const listId = aiTaskListId || todoLists[0]?.id
+    if (!listId) return
+    for (const t of tasks) {
+      await supabase.from('tasks').insert({ title: t, list_id: listId, sort_order: 9999 })
+    }
+    setAiResult(null)
+  }
+
   useEffect(() => {
     if (!showTagPicker) return
     function handleClick(e: MouseEvent) {
@@ -386,6 +484,118 @@ export function NoteEditor({ note }: { note: Note }) {
             </div>
           ) : (
             <button className={s.fmtBtn} onClick={() => setSaveTemplatePrompt(true)}>Save as template</button>
+          )}
+          <span className={s.fmtSep} />
+          <button
+            className={`${s.fmtBtn} ${s.aiFmtBtn}`}
+            onClick={handleSummarize}
+            disabled={aiLoading !== null || !content.trim()}
+            title="Summarize this note with AI"
+          >
+            {aiLoading === 'summarize' ? '…' : '✦ Summarize'}
+          </button>
+          <button
+            className={`${s.fmtBtn} ${s.aiFmtBtn}`}
+            onClick={handleSuggestTags}
+            disabled={aiLoading !== null || !content.trim()}
+            title="Suggest tags with AI"
+          >
+            {aiLoading === 'suggest-tags' ? '…' : '✦ Tags'}
+          </button>
+          <button
+            className={`${s.fmtBtn} ${s.aiFmtBtn}`}
+            onClick={handleGenerateTasks}
+            disabled={aiLoading !== null || !content.trim()}
+            title="Extract action items with AI"
+          >
+            {aiLoading === 'generate-tasks' ? '…' : '✦ Tasks'}
+          </button>
+        </div>
+      )}
+
+      {aiError && (
+        <div className={s.aiError}>
+          <span>{aiError}</span>
+          <button className={s.aiDismiss} onClick={() => setAiError(null)}>×</button>
+        </div>
+      )}
+
+      {aiResult && (
+        <div className={s.aiPanel}>
+          <div className={s.aiPanelHeader}>
+            <span className={s.aiPanelLabel}>
+              {aiResult.type === 'summary' && '✦ Summary'}
+              {aiResult.type === 'tags' && '✦ Suggested tags'}
+              {aiResult.type === 'tasks' && '✦ Action items'}
+            </span>
+            <button className={s.aiDismiss} onClick={() => setAiResult(null)}>×</button>
+          </div>
+
+          {aiResult.type === 'summary' && (
+            <p className={s.aiSummaryText}>{aiResult.text}</p>
+          )}
+
+          {aiResult.type === 'tags' && (
+            <div className={s.aiTagList}>
+              {aiResult.tags.length === 0 && <span className={s.aiEmpty}>No tags suggested.</span>}
+              {aiResult.tags.map(tag => {
+                const already = tags.some(t => t.name.toLowerCase() === tag.toLowerCase())
+                return (
+                  <button
+                    key={tag}
+                    className={`${s.aiTagChip} ${already ? s.aiTagAdded : ''}`}
+                    onClick={() => !already && addAiTagToNote(tag)}
+                    disabled={already}
+                  >
+                    {tag} {already ? '✓' : '+'}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          {aiResult.type === 'tasks' && (
+            <div className={s.aiTaskSection}>
+              {aiResult.tasks.length === 0 && <span className={s.aiEmpty}>No action items found.</span>}
+              <ul className={s.aiTaskList}>
+                {aiResult.tasks.map((t, i) => (
+                  <li key={i} className={s.aiTaskItem}>
+                    <span className={s.aiTaskBullet}>{addedTaskIndices.has(i) ? '✓' : '○'}</span>
+                    <span className={`${s.aiTaskTitle} ${addedTaskIndices.has(i) ? s.aiTaskDone : ''}`}>{t}</span>
+                    <button
+                      className={s.aiAddSingleBtn}
+                      onClick={() => addAiTask(t, i)}
+                      disabled={addedTaskIndices.has(i) || !aiTaskListId}
+                    >
+                      {addedTaskIndices.has(i) ? 'Added' : 'Add'}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              {todoLists.length === 0 && (
+                <span className={s.aiEmpty}>Create a task list first to add tasks.</span>
+              )}
+              {todoLists.length > 0 && aiResult.tasks.length > 0 && (
+                <div className={s.aiTaskActions}>
+                  <select
+                    className={s.aiListSelect}
+                    value={aiTaskListId}
+                    onChange={e => setAiTaskListId(e.target.value)}
+                  >
+                    {todoLists.map(l => (
+                      <option key={l.id} value={l.id}>{l.title}</option>
+                    ))}
+                  </select>
+                  <button
+                    className={s.aiAddAllBtn}
+                    onClick={() => addAllAiTasks(aiResult.tasks)}
+                    disabled={!aiTaskListId || addedTaskIndices.size === aiResult.tasks.length}
+                  >
+                    Add all
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}

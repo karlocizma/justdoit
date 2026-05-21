@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useTheme } from '@/components/layout/ThemeProvider'
 import s from './TopBar.module.css'
 
@@ -13,6 +13,11 @@ export function TopBar({ user }: { user: User }) {
   const [query, setQuery] = useState('')
   const { theme, toggleTheme } = useTheme()
   const initial = (user.name ?? user.email).slice(0, 2).toUpperCase()
+  const [modKey, setModKey] = useState('Ctrl')
+
+  useEffect(() => {
+    if (/Mac|iPhone|iPad|iPod/.test(navigator.platform)) setModKey('⌘')
+  }, [])
 
   function handleSearch(value: string) {
     setQuery(value)
@@ -30,12 +35,12 @@ export function TopBar({ user }: { user: User }) {
   }
 
   return (
-    <header className={s.root}>
+    <header className={s.root} suppressHydrationWarning>
       <div className={s.searchWrap}>
         <div className={s.searchIcon}><SearchIcon /></div>
         <input
           className={s.searchInput}
-          placeholder="Search… (⌘K for commands)"
+          placeholder={`Search… (${modKey}K for commands)`}
           value={query}
           onFocus={handleFocus}
           onChange={e => handleSearch(e.target.value)}

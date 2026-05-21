@@ -320,6 +320,34 @@
 
 .toggleOn .toggleThumb { transform: translateX(18px); }
 
+/* ── AI key ── */
+
+.apiKeyStatus {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(76,175,137,0.08);
+  border: 1px solid rgba(76,175,137,0.25);
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+
+.apiKeyConfigured {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4caf89;
+}
+
+.link {
+  color: var(--jd-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.link:hover { opacity: 0.8; }
+
 /* ── Export ── */
 
 .exportDesc {

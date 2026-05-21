@@ -160,13 +160,13 @@ export function AuthCard({ initialMode = 'login' }: { initialMode?: Mode }) {
         <div className={s.field}>
           <label className={s.label}>Email</label>
           <input className={s.input} type="email" required autoFocus={!isRegister}
-            value={email} onChange={e => setEmail(e.target.value)} />
+            value={email} onChange={e => setEmail(e.target.value)} suppressHydrationWarning />
         </div>
         <div className={s.field}>
           <label className={s.label}>Password</label>
           <input className={s.input} type="password" required minLength={isRegister ? 8 : 1}
             placeholder={isRegister ? 'At least 8 characters' : undefined}
-            value={password} onChange={e => setPassword(e.target.value)} />
+            value={password} onChange={e => setPassword(e.target.value)} suppressHydrationWarning />
         </div>
         {isRegister && (
           <div className={s.field}>

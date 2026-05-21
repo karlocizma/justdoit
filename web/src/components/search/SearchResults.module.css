@@ -145,3 +145,67 @@
   border-radius: 2px;
   padding: 0 1px;
 }
+
+.searchModeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.searchModeRow .count { margin-bottom: 0; }
+
+.aiSearchBtn {
+  padding: 6px 14px;
+  border-radius: 7px;
+  border: 1px solid var(--jd-accent);
+  background: var(--jd-accent-soft);
+  color: var(--jd-accent);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms;
+  white-space: nowrap;
+}
+
+.aiSearchBtn:hover { background: rgba(108,99,255,0.22); }
+
+.aiSearchBtnAlt {
+  padding: 6px 14px;
+  border-radius: 7px;
+  border: 1px solid var(--jd-border);
+  background: transparent;
+  color: var(--jd-fg-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms, color 120ms;
+  white-space: nowrap;
+}
+
+.aiSearchBtnAlt:hover { background: var(--jd-surface); color: var(--jd-fg); }
+
+.aiSearchLoading {
+  font-size: 14px;
+  color: var(--jd-fg-dim);
+  padding: 32px 0;
+  text-align: center;
+}
+
+.aiSearchError {
+  font-size: 13px;
+  color: var(--jd-danger);
+  padding: 12px;
+  background: rgba(224,92,92,0.08);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.aiReason {
+  font-size: 12px;
+  color: var(--jd-fg-dim);
+  margin-top: 3px;
+  font-style: italic;
+}
