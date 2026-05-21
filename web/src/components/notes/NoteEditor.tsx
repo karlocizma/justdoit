@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { marked } from 'marked'
 import { createClient } from '@/lib/supabase/client'
 import { TemplateModal } from './TemplateModal'
+import type { Template } from './TemplateModal'
 import type { Database } from '@/lib/database.types'
 import s from './NoteEditor.module.css'
 
@@ -29,6 +30,12 @@ export function NoteEditor({ note }: { note: Note }) {
   const [tagInput, setTagInput] = useState('')
   const [showTagPicker, setShowTagPicker] = useState(false)
   const [showTemplates, setShowTemplates] = useState(false)
+  const [userTemplates, setUserTemplates] = useState<Template[]>([])
+  const [saveTemplatePrompt, setSaveTemplatePrompt] = useState(false)
+  const [templateName, setTemplateName] = useState('')
+  // Backlinks
+  const [backlinks, setBacklinks] = useState<{ id: string; title: string }[]>([])
+  const [backlinksOpen, setBacklinksOpen] = useState(false)
   // Note linking state
   const [linkSearch, setLinkSearch] = useState<string | null>(null)
   const [linkNotes, setLinkNotes] = useState<{ id: string; title: string }[]>([])
@@ -51,6 +58,27 @@ export function NoteEditor({ note }: { note: Note }) {
     supabase.from('notes').select('id, title').is('deleted_at', null).eq('is_archived', false)
       .then(({ data }) => setAllNotes((data ?? []).filter(n => n.id !== note.id)))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load user templates from profiles.settings
+  useEffect(() => {
+    supabase.from('profiles').select('settings').single()
+      .then(({ data }) => {
+        const templates = (data?.settings as { templates?: Template[] })?.templates ?? []
+        setUserTemplates(templates)
+      })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load backlinks — notes whose content contains [[CurrentTitle]]
+  useEffect(() => {
+    if (!note.title) return
+    supabase
+      .from('notes')
+      .select('id, title')
+      .ilike('content', `%[[${note.title}]]%`)
+      .is('deleted_at', null)
+      .eq('is_archived', false)
+      .then(({ data }) => setBacklinks((data ?? []).filter(n => n.id !== note.id)))
+  }, [note.title]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Build a title→id map for the preview renderer
   const noteTitleMap = useMemo(() => {
@@ -179,6 +207,34 @@ export function NoteEditor({ note }: { note: Note }) {
     setTags(prev => prev.filter(t => t.id !== tagId))
   }
 
+  async function updateTemplatesInProfile(templates: Template[]) {
+    const { data: profile } = await supabase.from('profiles').select('settings, id').single()
+    const merged = { ...(profile?.settings as object ?? {}), templates }
+    await supabase.from('profiles').update({ settings: merged }).eq('id', profile!.id)
+  }
+
+  async function saveAsTemplate() {
+    const name = templateName.trim()
+    if (!name) return
+    const newTemplate: Template = {
+      id: crypto.randomUUID(),
+      name,
+      description: '',
+      content,
+    }
+    const updated = [...userTemplates, newTemplate]
+    setUserTemplates(updated)
+    setSaveTemplatePrompt(false)
+    setTemplateName('')
+    await updateTemplatesInProfile(updated)
+  }
+
+  async function deleteUserTemplate(id: string) {
+    const updated = userTemplates.filter(t => t.id !== id)
+    setUserTemplates(updated)
+    await updateTemplatesInProfile(updated)
+  }
+
   useEffect(() => {
     if (!showTagPicker) return
     function handleClick(e: MouseEvent) {
@@ -273,6 +329,26 @@ export function NoteEditor({ note }: { note: Note }) {
           <button className={s.fmtBtn} onClick={() => insertFormat('quote')}>&ldquo; Quote</button>
           <span className={s.fmtSep} />
           <button className={s.fmtBtn} onClick={() => setShowTemplates(true)}>Templates</button>
+          <span className={s.fmtSep} />
+          {saveTemplatePrompt ? (
+            <div className={s.saveTemplateInline}>
+              <input
+                className={s.saveTemplateInput}
+                placeholder="Template name…"
+                value={templateName}
+                onChange={e => setTemplateName(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') saveAsTemplate()
+                  if (e.key === 'Escape') { setSaveTemplatePrompt(false); setTemplateName('') }
+                }}
+                autoFocus
+              />
+              <button className={s.fmtBtn} onClick={saveAsTemplate} disabled={!templateName.trim()}>Save</button>
+              <button className={s.fmtBtn} onClick={() => { setSaveTemplatePrompt(false); setTemplateName('') }}>Cancel</button>
+            </div>
+          ) : (
+            <button className={s.fmtBtn} onClick={() => setSaveTemplatePrompt(true)}>Save as template</button>
+          )}
         </div>
       )}
 
@@ -374,6 +450,29 @@ export function NoteEditor({ note }: { note: Note }) {
         </span>
       </div>
 
+      <div className={s.backlinksSection}>
+        <button className={s.backlinksToggle} onClick={() => setBacklinksOpen(o => !o)}>
+          <BacklinkIcon />
+          <span>Backlinks</span>
+          <span className={s.backlinksCount}>{backlinks.length}</span>
+          <ChevronSmIcon open={backlinksOpen} />
+        </button>
+        {backlinksOpen && (
+          <div className={s.backlinksList}>
+            {backlinks.length === 0 ? (
+              <span className={s.backlinksEmpty}>No notes link to this one yet.</span>
+            ) : (
+              backlinks.map(n => (
+                <a key={n.id} href={`/notes/${n.id}`} className={s.backlinkItem}>
+                  <BacklinkIcon />
+                  {n.title || 'Untitled'}
+                </a>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+
       {showTemplates && (
         <TemplateModal
           hasContent={content.trim().length > 0}
@@ -382,6 +481,8 @@ export function NoteEditor({ note }: { note: Note }) {
             scheduleSave({ content: newContent })
           }}
           onClose={() => setShowTemplates(false)}
+          userTemplates={userTemplates}
+          onDeleteUserTemplate={deleteUserTemplate}
         />
       )}
     </div>
@@ -405,3 +506,7 @@ function ArchiveIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" 
 function TrashIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg> }
 function LinkIcon() { return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg> }
 function DownloadIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> }
+function BacklinkIcon() { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg> }
+function ChevronSmIcon({ open }: { open: boolean }) {
+  return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 150ms', flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>
+}

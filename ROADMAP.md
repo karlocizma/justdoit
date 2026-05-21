@@ -25,11 +25,6 @@ Allow the app to work without an internet connection and sync automatically when
 ### Progressive Web App (PWA)
 Installable from the browser on desktop and mobile. Pairs directly with offline mode — the service worker needed for offline caching also enables PWA install prompts. Requires a Web App Manifest and icon set.
 
-### Custom Note Templates
-Users can save any note as a personal template. Currently 6 built-in templates exist; this adds user-defined templates stored in `profiles.settings`.
-
-### Backlinks Index for Note Linking
-The `[[Title]]` note linking is live. Backlinks — a panel showing which other notes link to the current note — requires a server-side index (e.g. a `note_links` table populated on save) or a full-text search over `content` for `[[CurrentTitle]]`.
 
 ---
 
@@ -63,6 +58,8 @@ Notes can have a `due_at` timestamp alongside tasks. Appears in the calendar vie
 ## Completed
 
 ### Frontend Features
+- [x] **Custom note templates** — "Save as template" in the format bar stores any note's content to `profiles.settings.templates`; template modal shows "My templates" section with per-template delete, alongside 6 built-in templates
+- [x] **Backlinks index** — collapsible "Backlinks" panel at the bottom of each note showing all notes that link to it via `[[Title]]`; powered by `ilike` content search, no extra migration needed
 - [x] **Drag-and-drop reorder** — tasks within a list (grip handle + dnd-kit), lists in the sidebar, notes in the grid; all persisted via Supabase RPCs (`reorder_tasks`, `reorder_todo_lists`, `reorder_notes`)
 - [x] **Export enhancements** — download individual notes as `.md` from the editor; export a list as Markdown or CSV; import notes from `.md` / `.txt` / `.json` files
 - [x] Next.js 16 frontend with full auth flow (email/password, OAuth)

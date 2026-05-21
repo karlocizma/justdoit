@@ -205,17 +205,31 @@ export const BUILT_IN_TEMPLATES: Template[] = [
   },
 ]
 
+const TEMPLATE_ICONS: Record<string, string> = {
+  meeting: '🗓️',
+  project: '📋',
+  journal: '📖',
+  bug: '🐛',
+  weekly: '📊',
+  book: '📚',
+}
+
 export function TemplateModal({
   onSelect,
   onClose,
   hasContent,
+  userTemplates = [],
+  onDeleteUserTemplate,
 }: {
   onSelect: (content: string) => void
   onClose: () => void
   hasContent: boolean
+  userTemplates?: Template[]
+  onDeleteUserTemplate?: (id: string) => void
 }) {
   const [selected, setSelected] = useState<Template | null>(null)
   const [confirmMode, setConfirmMode] = useState<'replace' | 'append' | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   function choose(t: Template) {
     if (hasContent) {
@@ -231,6 +245,11 @@ export function TemplateModal({
     if (!selected) return
     onSelect(mode === 'append' ? `\n\n${selected.content}` : selected.content)
     onClose()
+  }
+
+  function deleteTemplate(id: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    setConfirmDeleteId(id)
   }
 
   return (
@@ -252,27 +271,55 @@ export function TemplateModal({
               <button className={s.cancelBtn} onClick={() => { setConfirmMode(null); setSelected(null) }}>Cancel</button>
             </div>
           </div>
-        ) : (
-          <div className={s.grid}>
-            {BUILT_IN_TEMPLATES.map(t => (
-              <button key={t.id} className={s.card} onClick={() => choose(t)}>
-                <div className={s.cardIcon}>{TEMPLATE_ICONS[t.id] ?? '📝'}</div>
-                <div className={s.cardName}>{t.name}</div>
-                <div className={s.cardDesc}>{t.description}</div>
+        ) : confirmDeleteId ? (
+          <div className={s.confirm}>
+            <p className={s.confirmText}>Delete this template? This cannot be undone.</p>
+            <div className={s.confirmBtns}>
+              <button className={s.confirmBtn} onClick={() => { onDeleteUserTemplate?.(confirmDeleteId); setConfirmDeleteId(null) }}>
+                Delete
               </button>
-            ))}
+              <button className={s.cancelBtn} onClick={() => setConfirmDeleteId(null)}>Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <div className={s.body}>
+            {userTemplates.length > 0 && (
+              <>
+                <div className={s.sectionLabel}>My templates</div>
+                <div className={s.grid}>
+                  {userTemplates.map(t => (
+                    <button key={t.id} className={s.card} onClick={() => choose(t)}>
+                      <div className={s.cardIcon}>📝</div>
+                      <div className={s.cardName}>{t.name}</div>
+                      {t.description && <div className={s.cardDesc}>{t.description}</div>}
+                      {onDeleteUserTemplate && (
+                        <button
+                          className={s.deleteBtn}
+                          onClick={e => deleteTemplate(t.id, e)}
+                          title="Delete template"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <div className={s.divider} />
+                <div className={s.sectionLabel}>Built-in templates</div>
+              </>
+            )}
+            <div className={s.grid}>
+              {BUILT_IN_TEMPLATES.map(t => (
+                <button key={t.id} className={s.card} onClick={() => choose(t)}>
+                  <div className={s.cardIcon}>{TEMPLATE_ICONS[t.id] ?? '📝'}</div>
+                  <div className={s.cardName}>{t.name}</div>
+                  <div className={s.cardDesc}>{t.description}</div>
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
     </div>
   )
-}
-
-const TEMPLATE_ICONS: Record<string, string> = {
-  meeting: '🗓️',
-  project: '📋',
-  journal: '📖',
-  bug: '🐛',
-  weekly: '📊',
-  book: '📚',
 }

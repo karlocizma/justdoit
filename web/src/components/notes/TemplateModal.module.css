@@ -150,3 +150,51 @@
 }
 
 .cancelBtn:hover { background: var(--jd-surface-2); color: var(--jd-fg); }
+
+.body {
+  overflow-y: auto;
+  max-height: 70vh;
+}
+
+.sectionLabel {
+  padding: 12px 18px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--jd-fg-dim);
+}
+
+.divider {
+  height: 1px;
+  background: var(--jd-border-soft);
+  margin: 8px 18px 0;
+}
+
+/* User template card has relative positioning for the delete button */
+.card {
+  position: relative;
+}
+
+.deleteBtn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: none;
+  background: var(--jd-surface-3);
+  color: var(--jd-fg-dim);
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 100ms, background 100ms, color 100ms;
+  line-height: 1;
+}
+
+.card:hover .deleteBtn { opacity: 1; }
+.deleteBtn:hover { background: var(--jd-danger); color: #fff; }

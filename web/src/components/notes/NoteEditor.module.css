@@ -451,3 +451,90 @@
   font-size: 11px;
   color: var(--jd-fg-dim);
 }
+
+/* Save as template inline prompt */
+.saveTemplateInline {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.saveTemplateInput {
+  background: var(--jd-surface);
+  border: 1px solid var(--jd-accent);
+  border-radius: 5px;
+  padding: 3px 8px;
+  font-size: 12px;
+  color: var(--jd-fg);
+  outline: none;
+  font-family: inherit;
+  width: 160px;
+}
+
+/* Backlinks section */
+.backlinksSection {
+  flex-shrink: 0;
+  border-top: 1px solid var(--jd-border-soft);
+}
+
+.backlinksToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 40px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--jd-fg-dim);
+  font-family: inherit;
+  text-align: left;
+  transition: background 120ms, color 120ms;
+}
+
+.backlinksToggle:hover { background: var(--jd-surface); color: var(--jd-fg); }
+
+.backlinksCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--jd-accent-soft);
+  color: var(--jd-accent);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 4px;
+}
+
+.backlinksList {
+  padding: 4px 40px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.backlinkItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--jd-fg-muted);
+  text-decoration: none;
+  border: 1px solid var(--jd-border);
+  background: var(--jd-surface);
+  transition: border-color 120ms, color 120ms;
+}
+
+.backlinkItem:hover { border-color: var(--jd-accent); color: var(--jd-fg); }
+
+.backlinksEmpty {
+  font-size: 12px;
+  color: var(--jd-fg-dim);
+  padding: 4px 0;
+}
