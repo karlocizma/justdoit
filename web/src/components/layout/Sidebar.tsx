@@ -35,6 +35,7 @@ export function Sidebar({ lists: initialLists, user, workspaces = [], pendingInv
   const router = useRouter()
   const supabase = createClient()
   const [lists, setLists] = useState(initialLists)
+  const [mounted, setMounted] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 })
   const footerRef = useRef<HTMLDivElement>(null)
@@ -50,6 +51,8 @@ export function Sidebar({ lists: initialLists, user, workspaces = [], pendingInv
     }
     setUserMenuOpen(true)
   }
+
+  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     if (!userMenuOpen) return
@@ -105,19 +108,35 @@ export function Sidebar({ lists: initialLists, user, workspaces = [], pendingInv
 
         <div className={s.section}>Personal</div>
         <div className={s.scrollLists}>
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleListDragEnd}>
-            <SortableContext items={lists.map(l => l.id)} strategy={verticalListSortingStrategy}>
-              <div className={s.navList}>
-                {lists.map(l => (
-                  <SortableListItem key={l.id} list={l} isActive={pathname === `/lists/${l.id}` || pathname.startsWith(`/lists/${l.id}/`)} />
-                ))}
-                <Link href="/lists/new" className={s.navItem}>
-                  <span className={s.navIcon}><PlusIcon /></span>
-                  <span className={s.navLabel} style={{ color: 'var(--jd-fg-dim)' }}>New list</span>
+          {mounted ? (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleListDragEnd}>
+              <SortableContext items={lists.map(l => l.id)} strategy={verticalListSortingStrategy}>
+                <div className={s.navList}>
+                  {lists.map(l => (
+                    <SortableListItem key={l.id} list={l} isActive={pathname === `/lists/${l.id}` || pathname.startsWith(`/lists/${l.id}/`)} />
+                  ))}
+                  <Link href="/lists/new" className={s.navItem}>
+                    <span className={s.navIcon}><PlusIcon /></span>
+                    <span className={s.navLabel} style={{ color: 'var(--jd-fg-dim)' }}>New list</span>
+                  </Link>
+                </div>
+              </SortableContext>
+            </DndContext>
+          ) : (
+            <div className={s.navList}>
+              {lists.map(l => (
+                <Link key={l.id} href={`/lists/${l.id}`} className={`${s.navItem} ${pathname === `/lists/${l.id}` || pathname.startsWith(`/lists/${l.id}/`) ? s.active : ''}`}>
+                  <span className={s.navColor} style={{ background: l.color }} />
+                  <span className={s.navLabel}>{l.title}</span>
+                  {l.open_count > 0 && <span className={s.navCount}>{l.open_count}</span>}
                 </Link>
-              </div>
-            </SortableContext>
-          </DndContext>
+              ))}
+              <Link href="/lists/new" className={s.navItem}>
+                <span className={s.navIcon}><PlusIcon /></span>
+                <span className={s.navLabel} style={{ color: 'var(--jd-fg-dim)' }}>New list</span>
+              </Link>
+            </div>
+          )}
         </div>
 
         {workspaces.length > 0 && (

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
   DndContext,
   DragEndEvent,
@@ -33,6 +33,8 @@ export function NotesList({ notes: initial, tags = [] }: { notes: Note[]; tags?:
   const importRef = useRef<HTMLInputElement>(null)
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
 
   async function createNote() {
     const { data } = await supabase
@@ -148,13 +150,19 @@ export function NotesList({ notes: initial, tags = [] }: { notes: Note[]; tags?:
       {rest.length > 0 && (
         <>
           {pinned.length > 0 && <div className={s.section}>Other notes</div>}
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={rest.map(n => n.id)} strategy={rectSortingStrategy}>
-              <div className={s.grid}>
-                {rest.map(n => <SortableNoteCard key={n.id} note={n} />)}
-              </div>
-            </SortableContext>
-          </DndContext>
+          {mounted ? (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={rest.map(n => n.id)} strategy={rectSortingStrategy}>
+                <div className={s.grid}>
+                  {rest.map(n => <SortableNoteCard key={n.id} note={n} />)}
+                </div>
+              </SortableContext>
+            </DndContext>
+          ) : (
+            <div className={s.grid}>
+              {rest.map(n => <NoteCard key={n.id} note={n} />)}
+            </div>
+          )}
         </>
       )}
 

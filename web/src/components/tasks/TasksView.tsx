@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   DndContext,
@@ -37,6 +37,8 @@ export function TasksView({ list, tasks: initial }: { list: List; tasks: Task[] 
   const [listTitle, setListTitle] = useState('')
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
 
   const open = tasks.filter(t => !t.completed_at).sort((a, b) => a.sort_order - b.sort_order)
   const done = tasks.filter(t => !!t.completed_at)
@@ -135,21 +137,35 @@ export function TasksView({ list, tasks: initial }: { list: List; tasks: Task[] 
           <button className={s.addBtn} onClick={addTask} disabled={!newTitle.trim()}>Add</button>
         </div>
 
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={open.map(t => t.id)} strategy={verticalListSortingStrategy}>
-            <div className={s.taskList}>
-              {open.map(task => (
-                <SortableTaskRow
-                  key={task.id}
-                  task={task}
-                  active={selected === task.id}
-                  onToggle={toggleTask}
-                  onSelect={setSelected}
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
+        {mounted ? (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={open.map(t => t.id)} strategy={verticalListSortingStrategy}>
+              <div className={s.taskList}>
+                {open.map(task => (
+                  <SortableTaskRow
+                    key={task.id}
+                    task={task}
+                    active={selected === task.id}
+                    onToggle={toggleTask}
+                    onSelect={setSelected}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        ) : (
+          <div className={s.taskList}>
+            {open.map(task => (
+              <TaskRow
+                key={task.id}
+                task={task}
+                active={selected === task.id}
+                onToggle={toggleTask}
+                onSelect={setSelected}
+              />
+            ))}
+          </div>
+        )}
 
         {done.length > 0 && (
           <div className={s.doneSection}>
