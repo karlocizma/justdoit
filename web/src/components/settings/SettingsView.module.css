@@ -1,36 +1,100 @@
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+
 .root {
-  padding: 28px 32px;
-  max-width: 560px;
-  margin: 0 auto;
+  display: flex;
+  min-height: calc(100vh - 56px);
 }
 
-.title {
-  font-size: 24px;
+.nav {
+  width: 220px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--jd-border);
+  padding: 28px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: sticky;
+  top: 0;
+  height: calc(100vh - 56px);
+  overflow-y: auto;
+}
+
+.navHeader {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--jd-fg-dim);
+  padding: 0 10px;
+  margin-bottom: 10px;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--jd-fg-dim);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms, color 120ms;
+}
+
+.navItem:hover {
+  background: var(--jd-surface-2);
+  color: var(--jd-fg);
+}
+
+.navItemActive {
+  background: var(--jd-accent-soft);
+  color: var(--jd-accent);
+  font-weight: 600;
+}
+
+.navItemActive:hover {
+  background: var(--jd-accent-soft);
+  color: var(--jd-accent);
+}
+
+.navIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+
+.navItemActive .navIcon {
+  opacity: 1;
+}
+
+.content {
+  flex: 1;
+  padding: 36px 48px;
+  max-width: 560px;
+}
+
+.contentTitle {
+  font-size: 20px;
   font-weight: 700;
   color: var(--jd-fg);
   letter-spacing: -0.01em;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
-.section {
-  background: var(--jd-surface);
-  border: 1px solid var(--jd-border);
-  border-radius: 12px;
-  padding: 20px 24px;
-  margin-bottom: 16px;
-}
-
-.sectionTitle {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--jd-fg);
-  margin-bottom: 16px;
-}
+/* ── Form elements ───────────────────────────────────────────────────────── */
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
 .field {
@@ -43,6 +107,8 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--jd-fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .input {
@@ -59,6 +125,12 @@
 
 .input:focus { border-color: var(--jd-accent); }
 .input.disabled { opacity: 0.6; cursor: not-allowed; }
+
+.desc {
+  font-size: 13px;
+  color: var(--jd-fg-muted);
+  line-height: 1.6;
+}
 
 .saveBtn {
   align-self: flex-start;
@@ -78,6 +150,7 @@
 .saveBtn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .dangerBtn {
+  align-self: flex-start;
   background: transparent;
   border: 1px solid rgba(224,92,92,0.4);
   color: var(--jd-danger);
@@ -108,14 +181,86 @@
   padding: 10px 12px;
   font-size: 13px;
   color: #4caf89;
-  margin-bottom: 12px;
 }
 
-/* ── Workspaces ── */
-
-.wsBlock {
-  margin-bottom: 16px;
+.divider {
+  height: 1px;
+  background: var(--jd-border);
+  margin: 4px 0;
 }
+
+/* ── Field groups (used in Notifications, Security) ───────────────────────*/
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fieldGroupTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--jd-fg);
+}
+
+/* ── Toggle ──────────────────────────────────────────────────────────────── */
+
+.toggleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.toggleInfo { flex: 1; }
+
+.toggleLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--jd-fg);
+  margin-bottom: 3px;
+}
+
+.toggleDesc {
+  font-size: 13px;
+  color: var(--jd-fg-muted);
+  line-height: 1.5;
+}
+
+.toggle {
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--jd-surface-3);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: background 200ms;
+  padding: 0;
+  margin-top: 2px;
+}
+
+.toggle:disabled { opacity: 0.6; cursor: not-allowed; }
+.toggleOn { background: var(--jd-accent); }
+
+.toggleThumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 200ms;
+  display: block;
+}
+
+.toggleOn .toggleThumb { transform: translateX(18px); }
+
+/* ── Workspaces ──────────────────────────────────────────────────────────── */
+
+.wsBlock { margin-bottom: 20px; }
 
 .wsSubLabel {
   font-size: 11px;
@@ -239,6 +384,7 @@
 }
 
 .leaveBtn:hover { color: var(--jd-danger); border-color: rgba(224,92,92,0.4); }
+.leaveBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .inviteForm {
   display: flex;
@@ -260,67 +406,9 @@
 }
 
 .inviteInput:focus { border-color: var(--jd-accent); }
+.wsCreate { padding-top: 4px; }
 
-.wsCreate {
-  padding-top: 4px;
-}
-
-/* ── Digest toggle ── */
-
-.toggleRow {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.toggleInfo { flex: 1; }
-
-.toggleLabel {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--jd-fg);
-  margin-bottom: 4px;
-}
-
-.toggleDesc {
-  font-size: 13px;
-  color: var(--jd-fg-muted);
-  line-height: 1.5;
-}
-
-.toggle {
-  width: 40px;
-  height: 22px;
-  border-radius: 11px;
-  background: var(--jd-surface-3);
-  border: none;
-  cursor: pointer;
-  position: relative;
-  flex-shrink: 0;
-  transition: background 200ms;
-  padding: 0;
-  margin-top: 2px;
-}
-
-.toggle:disabled { opacity: 0.6; cursor: not-allowed; }
-.toggleOn { background: var(--jd-accent); }
-
-.toggleThumb {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #fff;
-  transition: transform 200ms;
-  display: block;
-}
-
-.toggleOn .toggleThumb { transform: translateX(18px); }
-
-/* ── AI key ── */
+/* ── AI key ──────────────────────────────────────────────────────────────── */
 
 .apiKeyStatus {
   display: flex;
@@ -331,7 +419,6 @@
   background: rgba(76,175,137,0.08);
   border: 1px solid rgba(76,175,137,0.25);
   border-radius: 8px;
-  margin-bottom: 4px;
 }
 
 .apiKeyConfigured {
@@ -348,11 +435,51 @@
 
 .link:hover { opacity: 0.8; }
 
-/* ── Export ── */
+/* ── Security / 2FA ──────────────────────────────────────────────────────── */
 
-.exportDesc {
-  font-size: 13px;
-  color: var(--jd-fg-muted);
-  margin-bottom: 14px;
-  line-height: 1.5;
+.tfaActive {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.enrollWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.qrCode {
+  width: 160px;
+  height: 160px;
+  border-radius: 8px;
+  display: block;
+}
+
+.secret {
+  font-family: var(--jd-font-mono);
+  font-size: 12px;
+  color: var(--jd-fg-dim);
+  background: var(--jd-surface-2);
+  border: 1px solid var(--jd-border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  word-break: break-all;
+}
+
+.enrollActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ── Account ─────────────────────────────────────────────────────────────── */
+
+.accountEmail {
+  font-size: 14px;
+  color: var(--jd-fg);
+  padding: 10px 12px;
+  background: var(--jd-surface-2);
+  border: 1px solid var(--jd-border);
+  border-radius: 8px;
 }
