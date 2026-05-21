@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import s from './AuthCard.module.css'
 
-type Mode = 'login' | 'register' | 'forgot' | 'check-email' | 'forgot-sent' | 'reset-password'
+type Mode = 'login' | 'register' | 'forgot' | 'check-email' | 'forgot-sent' | 'reset-password' | 'mfa-challenge'
 
 export function AuthCard({ initialMode = 'login' }: { initialMode?: Mode }) {
   const router = useRouter()
@@ -18,6 +18,8 @@ export function AuthCard({ initialMode = 'login' }: { initialMode?: Mode }) {
   const [confirmNew, setConfirmNew] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [mfaFactorId, setMfaFactorId] = useState('')
+  const [mfaCode, setMfaCode] = useState('')
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -26,6 +28,31 @@ export function AuthCard({ initialMode = 'login' }: { initialMode?: Mode }) {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
     if (error) { setError(error.message); return }
+
+    const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+    if (aalData?.nextLevel === 'aal2' && aalData.nextLevel !== aalData.currentLevel) {
+      const { data: factorsData } = await supabase.auth.mfa.listFactors()
+      const factor = factorsData?.totp?.[0]
+      if (factor) {
+        setMfaFactorId(factor.id)
+        setMode('mfa-challenge')
+        return
+      }
+    }
+
+    router.push('/dashboard')
+    router.refresh()
+  }
+
+  async function handleMfaChallenge(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    const { data: challengeData, error: challengeErr } = await supabase.auth.mfa.challenge({ factorId: mfaFactorId })
+    if (challengeErr || !challengeData) { setError(challengeErr?.message ?? 'Challenge failed'); setLoading(false); return }
+    const { error: verifyErr } = await supabase.auth.mfa.verify({ factorId: mfaFactorId, challengeId: challengeData.id, code: mfaCode })
+    setLoading(false)
+    if (verifyErr) { setError('Invalid code. Try again.'); return }
     router.push('/dashboard')
     router.refresh()
   }
@@ -85,6 +112,35 @@ export function AuthCard({ initialMode = 'login' }: { initialMode?: Mode }) {
         Didn&apos;t get it?{' '}
         <button className={s.link} onClick={() => supabase.auth.resend({ type: 'signup', email })}>Resend</button>
       </div>
+    </div>
+  )
+
+  if (mode === 'mfa-challenge') return (
+    <div className={s.card}>
+      <div className={s.brand}><Logo /></div>
+      <h1 className={s.title}>Two-factor authentication</h1>
+      <p className={s.subtitle}>Enter the 6-digit code from your authenticator app.</p>
+      <form onSubmit={handleMfaChallenge} style={{ display: 'contents' }}>
+        {error && <div className={s.error}>{error}</div>}
+        <div className={s.field}>
+          <label className={s.label}>Authentication code</label>
+          <input
+            className={s.input}
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            required
+            maxLength={6}
+            placeholder="000000"
+            autoFocus
+            value={mfaCode}
+            onChange={e => setMfaCode(e.target.value.replace(/\D/g, ''))}
+          />
+        </div>
+        <button className={s.primaryBtn} type="submit" disabled={loading || mfaCode.length !== 6}>
+          {loading ? 'Verifying…' : 'Verify'}
+        </button>
+      </form>
     </div>
   )
 

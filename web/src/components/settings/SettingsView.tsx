@@ -49,6 +49,55 @@ export function SettingsView({ user, memberships: initialMemberships, digestEnab
   const [apiKeySaving, setApiKeySaving] = useState(false)
   const [apiKeyMsg, setApiKeyMsg] = useState('')
 
+  // 2FA
+  type TotpFactor = { id: string; friendly_name?: string }
+  const [totpFactors, setTotpFactors] = useState<TotpFactor[]>([])
+  const [enrollData, setEnrollData] = useState<{ factorId: string; qrCode: string; secret: string } | null>(null)
+  const [totpCode, setTotpCode] = useState('')
+  const [tfaMsg, setTfaMsg] = useState('')
+  const [tfaLoading, setTfaLoading] = useState(false)
+
+  useEffect(() => {
+    supabase.auth.mfa.listFactors().then(({ data }) => {
+      setTotpFactors((data?.totp ?? []) as TotpFactor[])
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function startEnroll() {
+    setTfaMsg('')
+    setTfaLoading(true)
+    const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' })
+    setTfaLoading(false)
+    if (error || !data) { setTfaMsg(error?.message ?? 'Enrollment failed'); return }
+    setEnrollData({ factorId: data.id, qrCode: data.totp.qr_code, secret: data.totp.secret })
+    setTotpCode('')
+  }
+
+  async function verifyEnroll() {
+    if (!enrollData) return
+    setTfaLoading(true)
+    setTfaMsg('')
+    const { data: challengeData, error: challengeErr } = await supabase.auth.mfa.challenge({ factorId: enrollData.factorId })
+    if (challengeErr || !challengeData) { setTfaMsg(challengeErr?.message ?? 'Challenge failed'); setTfaLoading(false); return }
+    const { error: verifyErr } = await supabase.auth.mfa.verify({ factorId: enrollData.factorId, challengeId: challengeData.id, code: totpCode })
+    setTfaLoading(false)
+    if (verifyErr) { setTfaMsg('Invalid code. Try again.'); return }
+    setEnrollData(null)
+    setTotpCode('')
+    setTfaMsg('Two-factor authentication enabled!')
+    setTotpFactors(prev => [...prev, { id: enrollData.factorId }])
+  }
+
+  async function unenrollFactor(factorId: string) {
+    if (!confirm('Disable two-factor authentication? Your account will be less secure.')) return
+    setTfaLoading(true)
+    const { error } = await supabase.auth.mfa.unenroll({ factorId })
+    setTfaLoading(false)
+    if (error) { setTfaMsg(error.message); return }
+    setTotpFactors(prev => prev.filter(f => f.id !== factorId))
+    setTfaMsg('Two-factor authentication disabled.')
+  }
+
   // Push notifications
   const [pushEnabled, setPushEnabled] = useState(false)
   const [pushSaving, setPushSaving] = useState(false)
@@ -496,6 +545,63 @@ export function SettingsView({ user, memberships: initialMemberships, digestEnab
         <button className={s.saveBtn} onClick={requestExport} disabled={exporting}>
           {exporting ? 'Requesting…' : 'Export data'}
         </button>
+      </section>
+
+      {/* Two-factor authentication */}
+      <section className={s.section}>
+        <h2 className={s.sectionTitle}>Two-factor authentication</h2>
+        <p className={s.exportDesc}>
+          Add an extra layer of security with a TOTP authenticator app (Google Authenticator, 1Password, Authy, etc.).
+        </p>
+        {tfaMsg && (
+          <div className={tfaMsg.includes('enabled') || tfaMsg.includes('disabled') ? s.success : s.error}>
+            {tfaMsg}
+          </div>
+        )}
+        {totpFactors.length > 0 ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
+            <span className={s.apiKeyConfigured}>2FA enabled ✓</span>
+            {totpFactors.map(f => (
+              <button key={f.id} className={s.leaveBtn} onClick={() => unenrollFactor(f.id)} disabled={tfaLoading}>
+                Disable
+              </button>
+            ))}
+          </div>
+        ) : enrollData ? (
+          <div style={{ marginTop: 12 }}>
+            <p className={s.exportDesc} style={{ marginBottom: 10 }}>
+              Scan this QR code with your authenticator app, then enter the 6-digit code to confirm.
+            </p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={enrollData.qrCode} alt="TOTP QR code" style={{ width: 160, height: 160, borderRadius: 8, marginBottom: 12, display: 'block' }} />
+            <div className={s.exportDesc} style={{ marginBottom: 8, fontFamily: 'var(--jd-font-mono)', fontSize: 12 }}>
+              Manual: {enrollData.secret}
+            </div>
+            <div className={s.field}>
+              <input
+                className={s.input}
+                placeholder="Enter 6-digit code"
+                maxLength={6}
+                value={totpCode}
+                onChange={e => setTotpCode(e.target.value.replace(/\D/g, ''))}
+                onKeyDown={e => e.key === 'Enter' && totpCode.length === 6 && verifyEnroll()}
+                autoFocus
+              />
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <button className={s.saveBtn} onClick={verifyEnroll} disabled={tfaLoading || totpCode.length !== 6}>
+                {tfaLoading ? 'Verifying…' : 'Verify & enable'}
+              </button>
+              <button className={s.leaveBtn} onClick={() => { setEnrollData(null); setTotpCode(''); setTfaMsg('') }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button className={s.saveBtn} style={{ marginTop: 12 }} onClick={startEnroll} disabled={tfaLoading}>
+            {tfaLoading ? 'Loading…' : 'Enable 2FA'}
+          </button>
+        )}
       </section>
 
       {/* Account */}

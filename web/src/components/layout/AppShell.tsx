@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CommandPalette } from './CommandPalette'
+import { KeyboardShortcutsModal } from './KeyboardShortcutsModal'
 
 const INPUT_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT'])
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const [paletteOpen, setPaletteOpen] = useState(false)
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -26,8 +28,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       switch (e.key) {
         case 'g':
-          // g then d = go dashboard, g then n = go notes, etc.
-          // handled by a simple one-key map for now
           break
         case 'n':
           e.preventDefault()
@@ -39,7 +39,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           break
         case '?':
           e.preventDefault()
-          setPaletteOpen(true)
+          setShortcutsOpen(true)
           break
       }
     }
@@ -52,6 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <>
       {children}
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      {shortcutsOpen && <KeyboardShortcutsModal onClose={() => setShortcutsOpen(false)} />}
     </>
   )
 }

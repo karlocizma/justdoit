@@ -3,12 +3,15 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { marked } from 'marked'
+import { markedHighlight } from 'marked-highlight'
+import hljs from 'highlight.js'
 import { createClient } from '@/lib/supabase/client'
 import { TemplateModal } from './TemplateModal'
 import type { Template } from './TemplateModal'
 import type { Database } from '@/lib/database.types'
 import { summarizeNote, suggestTags, generateTasks } from '@/lib/ai'
 import s from './NoteEditor.module.css'
+import 'highlight.js/styles/github-dark.css'
 
 type NoteUpdate = Database['public']['Tables']['notes']['Update']
 type Tag = { id: string; name: string; color: string | null }
@@ -16,6 +19,14 @@ type NoteTag = { tags: Tag }
 type Note = { id: string; title: string; content: string; color: string | null; is_pinned: boolean; due_at?: string | null; updated_at: string; note_tags: NoteTag[] }
 
 const COLORS = ['#8b7cff', '#5b9bff', '#48d1cc', '#4caf89', '#f5a623', '#e05c8b', '#e05c5c', null]
+
+marked.use(markedHighlight({
+  langPrefix: 'hljs language-',
+  highlight(code, lang) {
+    const language = hljs.getLanguage(lang) ? lang : 'plaintext'
+    return hljs.highlight(code, { language }).value
+  },
+}))
 
 export function NoteEditor({ note }: { note: Note }) {
   const router = useRouter()
@@ -50,6 +61,11 @@ export function NoteEditor({ note }: { note: Note }) {
   const [addedTaskIndices, setAddedTaskIndices] = useState<Set<number>>(new Set())
   const [todoLists, setTodoLists] = useState<{ id: string; title: string; color: string | null }[]>([])
   const [aiTaskListId, setAiTaskListId] = useState('')
+  // Focus mode
+  const [focusMode, setFocusMode] = useState(false)
+  // Attachment upload
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   // Note linking state
   const [linkSearch, setLinkSearch] = useState<string | null>(null)
   const [linkNotes, setLinkNotes] = useState<{ id: string; title: string }[]>([])
@@ -366,6 +382,50 @@ export function NoteEditor({ note }: { note: Note }) {
     }
   }
 
+  useEffect(() => {
+    document.documentElement.dataset.focus = focusMode ? 'true' : 'false'
+    return () => { delete document.documentElement.dataset.focus }
+  }, [focusMode])
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'f' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const tag = (e.target as HTMLElement)?.tagName
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+        e.preventDefault()
+        setFocusMode(f => !f)
+      }
+      if (e.key === 'Escape' && focusMode) setFocusMode(false)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [focusMode])
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `${note.id}/${Date.now()}.${ext}`
+      const { error } = await supabase.storage.from('note-attachments').upload(path, file)
+      if (error) throw error
+      const { data: urlData } = supabase.storage.from('note-attachments').getPublicUrl(path)
+      const isImage = file.type.startsWith('image/')
+      const md = isImage ? `![${file.name}](${urlData.publicUrl})` : `[${file.name}](${urlData.publicUrl})`
+      const ta = textareaRef.current
+      const pos = ta?.selectionStart ?? content.length
+      const newContent = content.slice(0, pos) + '\n' + md + '\n' + content.slice(pos)
+      setContent(newContent)
+      scheduleSave({ content: newContent })
+    } catch (err) {
+      console.error('Upload failed:', err)
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
   function insertNoteLink(n: { id: string; title: string }) {
     const ta = textareaRef.current
     if (!ta) return
@@ -383,7 +443,7 @@ export function NoteEditor({ note }: { note: Note }) {
 
   return (
     <div className={s.root}>
-      <div className={s.toolbar}>
+      <div className={s.toolbar} data-print="hide">
         <button className={s.back} onClick={() => router.push('/notes')}>
           <ChevronLeftIcon /> Notes
         </button>
@@ -442,6 +502,13 @@ export function NoteEditor({ note }: { note: Note }) {
           <button className={s.toolBtn} onClick={archive} title="Archive"><ArchiveIcon /></button>
           <button className={`${s.toolBtn} ${s.danger}`} onClick={trash} title="Trash"><TrashIcon /></button>
           <button className={s.toolBtn} onClick={() => exportNote(title, content)} title="Download as .md"><DownloadIcon /></button>
+          <button
+            className={`${s.toolBtn} ${focusMode ? s.active : ''}`}
+            onClick={() => setFocusMode(f => !f)}
+            title={focusMode ? 'Exit focus mode (F)' : 'Focus mode (F)'}
+          >
+            <FocusIcon />
+          </button>
           <div className={s.modeTabs}>
             <button className={`${s.modeTab} ${mode === 'edit' ? s.modeActive : ''}`} onClick={() => setMode('edit')}>Edit</button>
             <button className={`${s.modeTab} ${mode === 'preview' ? s.modeActive : ''}`} onClick={() => setMode('preview')}>Preview</button>
@@ -450,7 +517,7 @@ export function NoteEditor({ note }: { note: Note }) {
       </div>
 
       {mode === 'edit' && (
-        <div className={s.formatBar}>
+        <div className={s.formatBar} data-print="hide">
           <button className={s.fmtBtn} onClick={() => insertFormat('h1')}>H1</button>
           <button className={s.fmtBtn} onClick={() => insertFormat('h2')}>H2</button>
           <button className={s.fmtBtn} onClick={() => insertFormat('h3')}>H3</button>
@@ -510,6 +577,21 @@ export function NoteEditor({ note }: { note: Note }) {
           >
             {aiLoading === 'generate-tasks' ? '…' : '✦ Tasks'}
           </button>
+          <span className={s.fmtSep} />
+          <button
+            className={s.fmtBtn}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            title="Attach file or image"
+          >
+            {uploading ? '…' : '📎 Attach'}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            style={{ display: 'none' }}
+            onChange={handleFileUpload}
+          />
         </div>
       )}
 
@@ -767,6 +849,7 @@ function LinkIcon() { return <svg width="12" height="12" viewBox="0 0 24 24" fil
 function DownloadIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> }
 function BacklinkIcon() { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg> }
 function DueDateIcon() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> }
+function FocusIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 00-2 2v3"/><path d="M21 8V5a2 2 0 00-2-2h-3"/><path d="M3 16v3a2 2 0 002 2h3"/><path d="M16 21h3a2 2 0 002-2v-3"/></svg> }
 function ChevronSmIcon({ open }: { open: boolean }) {
   return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 150ms', flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>
 }

@@ -40,6 +40,30 @@ export function TasksView({ list, tasks: initial }: { list: List; tasks: Task[] 
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
 
+  const [bulkMode, setBulkMode] = useState(false)
+  const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set())
+
+  function toggleBulk(id: string) {
+    setBulkSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
+
+  function exitBulk() { setBulkMode(false); setBulkSelected(new Set()) }
+
+  async function bulkDelete() {
+    const ids = Array.from(bulkSelected)
+    await supabase.from('tasks').delete().in('id', ids)
+    setTasks(prev => prev.filter(t => !bulkSelected.has(t.id)))
+    exitBulk()
+  }
+
+  async function bulkComplete() {
+    const ids = Array.from(bulkSelected)
+    const now = new Date().toISOString()
+    await supabase.from('tasks').update({ completed_at: now }).in('id', ids)
+    setTasks(prev => prev.map(t => bulkSelected.has(t.id) ? { ...t, completed_at: now } : t))
+    exitBulk()
+  }
+
   const open = tasks.filter(t => !t.completed_at).sort((a, b) => a.sort_order - b.sort_order)
   const done = tasks.filter(t => !!t.completed_at)
   const selectedTask = tasks.find(t => t.id === selected) ?? null
@@ -123,7 +147,19 @@ export function TasksView({ list, tasks: initial }: { list: List; tasks: Task[] 
           <div className={s.listDot} style={{ background: list.color ?? '#6c63ff' }} />
           <h1 className={s.listTitle}>{list.title}</h1>
           <span className={s.count}>{open.length} open</span>
-          <ExportMenu tasks={tasks} listTitle={list.title} />
+          {bulkMode ? (
+            <>
+              <span className={s.bulkCount}>{bulkSelected.size} selected</span>
+              <button className={s.bulkBtn} onClick={bulkComplete} disabled={bulkSelected.size === 0}>Complete</button>
+              <button className={`${s.bulkBtn} ${s.bulkDanger}`} onClick={bulkDelete} disabled={bulkSelected.size === 0}>Delete</button>
+              <button className={s.bulkCancelBtn} onClick={exitBulk}>Cancel</button>
+            </>
+          ) : (
+            <>
+              <button className={s.bulkCancelBtn} onClick={() => setBulkMode(true)}>Select</button>
+              <ExportMenu tasks={tasks} listTitle={list.title} />
+            </>
+          )}
         </div>
 
         <div className={s.addRow}>
@@ -137,7 +173,7 @@ export function TasksView({ list, tasks: initial }: { list: List; tasks: Task[] 
           <button className={s.addBtn} onClick={addTask} disabled={!newTitle.trim()}>Add</button>
         </div>
 
-        {mounted ? (
+        {mounted && !bulkMode ? (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={open.map(t => t.id)} strategy={verticalListSortingStrategy}>
               <div className={s.taskList}>
@@ -161,7 +197,9 @@ export function TasksView({ list, tasks: initial }: { list: List; tasks: Task[] 
                 task={task}
                 active={selected === task.id}
                 onToggle={toggleTask}
-                onSelect={setSelected}
+                onSelect={bulkMode ? toggleBulk : setSelected}
+                bulkMode={bulkMode}
+                bulkSelected={bulkSelected.has(task.id)}
               />
             ))}
           </div>
@@ -178,8 +216,10 @@ export function TasksView({ list, tasks: initial }: { list: List; tasks: Task[] 
                 task={task}
                 active={selected === task.id}
                 onToggle={toggleTask}
-                onSelect={setSelected}
+                onSelect={bulkMode ? toggleBulk : setSelected}
                 dimmed
+                bulkMode={bulkMode}
+                bulkSelected={bulkSelected.has(task.id)}
               />
             ))}
           </div>
@@ -241,23 +281,33 @@ function SortableTaskRow({ task, active, onToggle, onSelect }: {
   )
 }
 
-function TaskRow({ task, active, onToggle, onSelect, dimmed }: {
+function TaskRow({ task, active, onToggle, onSelect, dimmed, bulkMode = false, bulkSelected = false }: {
   task: Task
   active: boolean
   onToggle: (id: string) => void
   onSelect: (id: string) => void
   dimmed?: boolean
+  bulkMode?: boolean
+  bulkSelected?: boolean
 }) {
   return (
-    <div className={`${s.row} ${active ? s.rowActive : ''} ${dimmed ? s.rowDimmed : ''}`}>
-      <button
-        className={`${s.check} ${task.completed_at ? s.checked : ''}`}
-        onClick={e => { e.stopPropagation(); onToggle(task.id) }}
-        aria-label="Complete"
-      >
-        {task.completed_at && <CheckIcon />}
-      </button>
-      <div className={s.rowBody} onClick={() => onSelect(task.id)}>
+    <div className={`${s.row} ${active ? s.rowActive : ''} ${dimmed ? s.rowDimmed : ''} ${bulkSelected ? s.rowBulkSelected : ''}`}
+      onClick={bulkMode ? () => onSelect(task.id) : undefined}
+    >
+      {bulkMode ? (
+        <div className={`${s.bulkCheck} ${bulkSelected ? s.bulkCheckActive : ''}`}>
+          {bulkSelected ? '✓' : ''}
+        </div>
+      ) : (
+        <button
+          className={`${s.check} ${task.completed_at ? s.checked : ''}`}
+          onClick={e => { e.stopPropagation(); onToggle(task.id) }}
+          aria-label="Complete"
+        >
+          {task.completed_at && <CheckIcon />}
+        </button>
+      )}
+      <div className={s.rowBody} onClick={bulkMode ? undefined : () => onSelect(task.id)}>
         <span className={s.rowTitle}>{task.title}</span>
         <div className={s.rowMeta}>
           {task.due_date && <span className={s.due}>{formatDue(task.due_date)}</span>}

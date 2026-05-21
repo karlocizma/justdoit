@@ -31,6 +31,8 @@ export function NotesList({ notes: initial, tags = [] }: { notes: Note[]; tags?:
   const [notes, setNotes] = useState(initial)
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null)
   const importRef = useRef<HTMLInputElement>(null)
+  const [selectMode, setSelectMode] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
   const [mounted, setMounted] = useState(false)
@@ -90,6 +92,33 @@ export function NotesList({ notes: initial, tags = [] }: { notes: Note[]; tags?:
     router.refresh()
   }
 
+  function toggleSelect(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function exitSelectMode() {
+    setSelectMode(false)
+    setSelected(new Set())
+  }
+
+  async function bulkArchive() {
+    const ids = Array.from(selected)
+    await supabase.from('notes').update({ is_archived: true }).in('id', ids)
+    setNotes(prev => prev.filter(n => !selected.has(n.id)))
+    exitSelectMode()
+  }
+
+  async function bulkDelete() {
+    const ids = Array.from(selected)
+    await supabase.from('notes').update({ deleted_at: new Date().toISOString() }).in('id', ids)
+    setNotes(prev => prev.filter(n => !selected.has(n.id)))
+    exitSelectMode()
+  }
+
   const filtered = selectedTagId
     ? notes.filter(n => n.note_tags?.some(nt => nt.tags?.id === selectedTagId))
     : notes
@@ -101,19 +130,31 @@ export function NotesList({ notes: initial, tags = [] }: { notes: Note[]; tags?:
       <div className={s.header}>
         <h1 className={s.title}>Notes</h1>
         <div className={s.headerActions}>
-          <input
-            ref={importRef}
-            type="file"
-            accept=".md,.txt,.json"
-            multiple
-            className={s.importInput}
-            onChange={handleImport}
-            id="note-import"
-          />
-          <label htmlFor="note-import" className={s.importBtn} title="Import notes (.md / .txt / .json)">
-            <ImportIcon /> Import
-          </label>
-          <button className={s.newBtn} onClick={createNote}>+ New note</button>
+          {selectMode ? (
+            <>
+              <span className={s.selectCount}>{selected.size} selected</span>
+              <button className={s.bulkBtn} onClick={bulkArchive} disabled={selected.size === 0} title="Archive selected">Archive</button>
+              <button className={`${s.bulkBtn} ${s.bulkDanger}`} onClick={bulkDelete} disabled={selected.size === 0} title="Trash selected">Trash</button>
+              <button className={s.importBtn} onClick={exitSelectMode}>Cancel</button>
+            </>
+          ) : (
+            <>
+              <input
+                ref={importRef}
+                type="file"
+                accept=".md,.txt,.json"
+                multiple
+                className={s.importInput}
+                onChange={handleImport}
+                id="note-import"
+              />
+              <label htmlFor="note-import" className={s.importBtn} title="Import notes (.md / .txt / .json)">
+                <ImportIcon /> Import
+              </label>
+              <button className={s.importBtn} onClick={() => setSelectMode(true)} title="Select notes">Select</button>
+              <button className={s.newBtn} onClick={createNote}>+ New note</button>
+            </>
+          )}
         </div>
       </div>
 
@@ -142,7 +183,9 @@ export function NotesList({ notes: initial, tags = [] }: { notes: Note[]; tags?:
         <>
           <div className={s.section}>Pinned</div>
           <div className={s.grid}>
-            {pinned.map(n => <NoteCard key={n.id} note={n} />)}
+            {pinned.map(n => (
+              <NoteCard key={n.id} note={n} selectMode={selectMode} selected={selected.has(n.id)} onSelect={toggleSelect} />
+            ))}
           </div>
         </>
       )}
@@ -150,7 +193,7 @@ export function NotesList({ notes: initial, tags = [] }: { notes: Note[]; tags?:
       {rest.length > 0 && (
         <>
           {pinned.length > 0 && <div className={s.section}>Other notes</div>}
-          {mounted ? (
+          {mounted && !selectMode ? (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={rest.map(n => n.id)} strategy={rectSortingStrategy}>
                 <div className={s.grid}>
@@ -160,7 +203,9 @@ export function NotesList({ notes: initial, tags = [] }: { notes: Note[]; tags?:
             </DndContext>
           ) : (
             <div className={s.grid}>
-              {rest.map(n => <NoteCard key={n.id} note={n} />)}
+              {rest.map(n => (
+                <NoteCard key={n.id} note={n} selectMode={selectMode} selected={selected.has(n.id)} onSelect={toggleSelect} />
+              ))}
             </div>
           )}
         </>
@@ -202,14 +247,24 @@ function SortableNoteCard({ note }: { note: Note }) {
   )
 }
 
-function NoteCard({ note }: { note: Note }) {
+function NoteCard({ note, selectMode = false, selected = false, onSelect }: {
+  note: Note
+  selectMode?: boolean
+  selected?: boolean
+  onSelect?: (id: string) => void
+}) {
   const snippet = note.content?.replace(/[#*_`[\]]/g, '').trim().slice(0, 140) ?? ''
   const relTime = formatRelative(note.updated_at)
   const tags = note.note_tags?.map(nt => nt.tags).filter(Boolean) ?? []
 
-  return (
-    <Link href={`/notes/${note.id}`} className={s.card}>
+  const cardContent = (
+    <>
       {note.color && <div className={s.colorBar} style={{ background: note.color }} />}
+      {selectMode && (
+        <div className={`${s.selectCheck} ${selected ? s.selectCheckActive : ''}`}>
+          {selected ? '✓' : ''}
+        </div>
+      )}
       <div className={s.cardBody}>
         <div className={s.cardTitle}>{note.title || 'Untitled'}</div>
         {snippet && <div className={s.cardSnippet}>{snippet}</div>}
@@ -226,6 +281,25 @@ function NoteCard({ note }: { note: Note }) {
           )}
         </div>
       </div>
+    </>
+  )
+
+  if (selectMode) {
+    return (
+      <div
+        className={`${s.card} ${selected ? s.cardSelected : ''}`}
+        onClick={() => onSelect?.(note.id)}
+        role="checkbox"
+        aria-checked={selected}
+      >
+        {cardContent}
+      </div>
+    )
+  }
+
+  return (
+    <Link href={`/notes/${note.id}`} className={s.card}>
+      {cardContent}
     </Link>
   )
 }

@@ -89,6 +89,7 @@
   cursor: pointer;
   transition: border-color 150ms, box-shadow 150ms, transform 100ms;
   min-height: 100px;
+  position: relative;
 }
 
 .card:hover {
@@ -218,3 +219,58 @@
 
 .cardWrapper:hover .dragHandleNote { opacity: 1; }
 .dragHandleNote:active { cursor: grabbing; }
+
+/* Bulk select */
+.selectCount {
+  font-size: 13px;
+  color: var(--jd-fg-dim);
+  margin-right: 4px;
+}
+
+.bulkBtn {
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--jd-border);
+  background: transparent;
+  color: var(--jd-fg-dim);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms, color 120ms;
+}
+
+.bulkBtn:hover:not(:disabled) { background: var(--jd-surface); color: var(--jd-fg); }
+.bulkBtn:disabled { opacity: 0.4; cursor: default; }
+
+.bulkDanger { color: var(--jd-danger, #e05c5c); }
+.bulkDanger:hover:not(:disabled) { background: rgba(224, 92, 92, 0.1); color: var(--jd-danger, #e05c5c); border-color: var(--jd-danger, #e05c5c); }
+
+.cardSelected {
+  border-color: var(--jd-accent) !important;
+  box-shadow: 0 0 0 2px var(--jd-accent-soft, rgba(139, 124, 255, 0.15));
+}
+
+.selectCheck {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--jd-border);
+  background: var(--jd-surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  z-index: 2;
+  transition: background 120ms, border-color 120ms;
+}
+
+.selectCheckActive {
+  background: var(--jd-accent);
+  border-color: var(--jd-accent);
+}

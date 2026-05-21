@@ -35,7 +35,7 @@ export function TopBar({ user }: { user: User }) {
   }
 
   return (
-    <header className={s.root} suppressHydrationWarning>
+    <header className={s.root} data-role="topbar" suppressHydrationWarning>
       <div className={s.searchWrap}>
         <div className={s.searchIcon}><SearchIcon /></div>
         <input

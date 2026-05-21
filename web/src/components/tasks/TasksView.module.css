@@ -271,3 +271,56 @@
 }
 
 .exportItem:hover { background: var(--jd-surface-hover); }
+
+/* Bulk select */
+.bulkCount { font-size: 13px; color: var(--jd-fg-dim); }
+
+.bulkBtn {
+  padding: 5px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--jd-border);
+  background: transparent;
+  color: var(--jd-fg-dim);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms;
+}
+
+.bulkBtn:hover:not(:disabled) { background: var(--jd-surface); color: var(--jd-fg); }
+.bulkBtn:disabled { opacity: 0.4; cursor: default; }
+.bulkDanger { color: var(--jd-danger, #e05c5c); }
+.bulkDanger:hover:not(:disabled) { background: rgba(224,92,92,0.1); color: var(--jd-danger, #e05c5c); border-color: var(--jd-danger, #e05c5c); }
+
+.bulkCancelBtn {
+  padding: 5px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--jd-border);
+  background: transparent;
+  color: var(--jd-fg-dim);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.bulkCancelBtn:hover { background: var(--jd-surface); color: var(--jd-fg); }
+
+.rowBulkSelected { background: var(--jd-accent-soft, rgba(108,99,255,0.1)) !important; }
+
+.bulkCheck {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid var(--jd-border);
+  background: var(--jd-surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+}
+
+.bulkCheckActive { background: var(--jd-accent); border-color: var(--jd-accent); }

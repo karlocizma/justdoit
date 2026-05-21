@@ -47,3 +47,28 @@ a {
     color-scheme: dark;
   }
 }
+
+/* ── Focus mode ─────────────────────────────────────────────────────────── */
+html[data-focus="true"] [data-role="sidebar"],
+html[data-focus="true"] [data-role="topbar"] {
+  display: none !important;
+}
+
+/* ── Print view ─────────────────────────────────────────────────────────── */
+@media print {
+  [data-role="sidebar"],
+  [data-role="topbar"],
+  [data-print="hide"] {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  main {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+}

@@ -27,41 +27,6 @@ Installable from the browser on desktop and mobile. Pairs directly with offline 
 
 ---
 
-### Focus Mode
-Distraction-free writing — hide the sidebar and toolbar, expand the editor to full width. Toggle via a button in the NoteEditor toolbar or a keyboard shortcut (`F`). Pure CSS, no schema changes needed.
-
----
-
-### Syntax Highlighting in Preview
-Add Prism.js or highlight.js to the Markdown renderer so fenced code blocks get language-aware colours. The code block CSS already exists; this is purely a frontend addition.
-
----
-
-### Keyboard Shortcuts Reference
-Press `?` anywhere in the app to open a modal listing all keyboard shortcuts (`⌘K`, `N`, `/`, `F` for focus mode, etc.). No backend work required.
-
----
-
-### Print View
-`@media print` stylesheet that hides the sidebar, toolbar, and chrome so notes render cleanly when printed or saved as PDF from the browser.
-
----
-
-### Note Graph View
-Visual canvas showing how notes link to each other via `[[Title]]`. The backlinks data is already indexed — this is a D3.js or canvas-based visualisation layer on top of existing data. Accessible from a "Graph" button in the notes list or sidebar.
-
----
-
-### Attachment Uploads in Notes
-Drag-to-upload files and images directly into the note editor. The `note-attachments` Supabase Storage bucket (5 MB/file limit) already exists and has RLS in place — this only needs the upload UI in the editor and an image/file rendering pass in preview mode.
-
----
-
-### Bulk Actions on Notes and Tasks
-Checkbox select mode in the notes grid and task lists. Once items are selected, offer Archive, Delete, Add tag, and (for tasks) Move to list actions. All underlying operations already exist individually.
-
----
-
 ### Task Assignment in Workspaces
 Add an `assigned_to uuid` column to `tasks` referencing `auth.users`. Show an assignee avatar picker in the task detail. Add a "Assigned to me" filter in the task list. Scope: one migration, small UI changes.
 
@@ -102,6 +67,15 @@ A React Native app sharing auth and data with the same Supabase backend. The API
 ## Completed
 
 ### Frontend Features
+- [x] **Two-factor authentication (2FA)** — TOTP-based 2FA via Supabase Auth MFA (`enrollMFA` / `challengeMFA`); enrollment UI with QR code in Settings → Two-factor authentication; `mfa-challenge` screen in the login flow
+- [x] **Note Graph View** — `/graph` route with D3.js force-directed canvas showing `[[Title]]` note connections; zoom/pan/drag; node tooltips; click to open note; linked-only or show-all toggle
+- [x] **Attachment uploads in notes** — "📎 Attach" button in the format bar uploads files/images to the `note-attachments` Supabase Storage bucket; inserts a Markdown image or link at cursor position
+- [x] **Bulk actions on notes** — "Select" mode in the notes grid adds checkboxes; action bar with Archive and Trash buttons for the selected items
+- [x] **Bulk actions on tasks** — "Select" mode in the task list adds checkboxes; action bar with Complete and Delete buttons
+- [x] **Print view** — `@media print` CSS hides sidebar, topbar, and editor toolbar via `data-role` / `data-print` attributes; notes render cleanly when printed or saved as PDF
+- [x] **Focus mode** — toggle button (expand icon) in NoteEditor toolbar and `F` key shortcut; hides sidebar and topbar via `html[data-focus="true"]` CSS; `Esc` to exit
+- [x] **Syntax highlighting in preview** — `marked-highlight` + `highlight.js` (github-dark theme) in the Markdown preview; fenced code blocks get language-aware colours
+- [x] **Keyboard shortcuts reference** — `?` key anywhere in the app opens a modal listing all shortcuts; `Esc` to close
 - [x] **AI features** — `supabase/functions/ai` Edge Function proxying to Anthropic (`claude-haiku-4-5`) with 4 actions: summarize note, suggest tags, generate task list, smart search (natural language query); AI buttons in NoteEditor format bar; smart search toggle in search results; requires `ANTHROPIC_API_KEY` Supabase secret
 - [x] **Shared workspace improvements** — role management UI (owners can promote/demote/remove members), role badges (owner/admin/member), recent activity feed per workspace
 - [x] **Due dates on notes** — `due_at` column on `notes`, date-time picker in NoteEditor toolbar with clear button and relative label; notes appear on the Calendar
