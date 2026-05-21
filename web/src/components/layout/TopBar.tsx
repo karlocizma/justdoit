@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useTransition } from 'react'
 import { useTheme } from '@/components/layout/ThemeProvider'
+import { TourButton } from '@/components/onboarding/TourModal'
 import s from './TopBar.module.css'
 
 type User = { email: string; name?: string }
@@ -51,6 +52,7 @@ export function TopBar({ user }: { user: User }) {
           <span className={`${s.syncDot} ${s.connected}`} />
           <span className={s.syncLabel}>Connected</span>
         </div>
+        <TourButton />
         <button
           className={s.themeBtn}
           onClick={toggleTheme}
