@@ -88,11 +88,16 @@ export function NoteGraph({ notes }: { notes: RawNote[] }) {
 
     d3.select(svg).call(zoom)
 
+    const style = getComputedStyle(svg)
+    const borderColor = style.getPropertyValue('--jd-border').trim() || '#333'
+    const accentColor = style.getPropertyValue('--jd-accent').trim() || '#8b7cff'
+    const surfaceColor = style.getPropertyValue('--jd-surface').trim() || '#1a1a2e'
+
     const link = g.append('g')
       .selectAll('line')
       .data(links)
       .join('line')
-      .attr('stroke', 'var(--jd-border)')
+      .attr('stroke', borderColor)
       .attr('stroke-width', 1.5)
       .attr('stroke-opacity', 0.6)
 
@@ -101,9 +106,9 @@ export function NoteGraph({ notes }: { notes: RawNote[] }) {
       .data(nodes)
       .join('circle')
       .attr('r', d => 5 + Math.min(d.links * 2, 12))
-      .attr('fill', 'var(--jd-accent)')
+      .attr('fill', accentColor)
       .attr('fill-opacity', 0.8)
-      .attr('stroke', 'var(--jd-surface-1)')
+      .attr('stroke', surfaceColor)
       .attr('stroke-width', 2)
       .style('cursor', 'pointer')
       .on('mouseover', function(event, d) {
@@ -127,15 +132,20 @@ export function NoteGraph({ notes }: { notes: RawNote[] }) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     node.call(dragBehavior as any)
 
+    const labelColor = style.getPropertyValue('--jd-fg').trim() || '#ededed'
+
     const label = g.append('g')
       .selectAll('text')
       .data(nodes)
       .join('text')
       .text(d => d.title.length > 20 ? d.title.slice(0, 20) + '…' : d.title)
-      .attr('font-size', 10)
-      .attr('fill', 'var(--jd-text-2)')
+      .attr('font-size', 11)
       .attr('text-anchor', 'middle')
-      .attr('dy', d => -(5 + Math.min(d.links * 2, 12)) - 4)
+      .attr('dy', d => -(5 + Math.min(d.links * 2, 12)) - 5)
+      .style('fill', labelColor)
+      .style('stroke', 'var(--jd-surface)')
+      .style('stroke-width', '3px')
+      .style('paint-order', 'stroke fill')
       .style('pointer-events', 'none')
       .style('user-select', 'none')
 
