@@ -19,15 +19,22 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { createClient } from '@/lib/supabase/client'
 import { TaskDetailPanel } from './TaskDetailPanel'
+import { KanbanBoard } from './KanbanBoard'
 import s from './TasksView.module.css'
 
 type List = { id: string; title: string; color: string | null } | null
-type Task = { id: string; title: string; notes: string | null; priority: number; due_date: string | null; completed_at: string | null; sort_order: number; parent_id: string | null }
+type Task = { id: string; title: string; notes: string | null; priority: number; due_date: string | null; completed_at: string | null; sort_order: number; parent_id: string | null; status: string; assigned_to: string | null }
+type Member = { userId: string; displayName: string | null }
 
 const PRIORITY_COLOR = ['', '#7b82a8', '#6c63ff', '#f5a623', '#e05c5c']
 const PRIORITY_LABEL = ['', 'low', 'medium', 'high', 'urgent']
 
-export function TasksView({ list, tasks: initial }: { list: List; tasks: Task[] }) {
+export function TasksView({ list, tasks: initial, members = [], currentUserId }: {
+  list: List
+  tasks: Task[]
+  members?: Member[]
+  currentUserId?: string
+}) {
   const router = useRouter()
   const supabase = createClient()
   const [tasks, setTasks] = useState(initial)
@@ -35,6 +42,8 @@ export function TasksView({ list, tasks: initial }: { list: List; tasks: Task[] 
   const [newTitle, setNewTitle] = useState('')
   const [showDone, setShowDone] = useState(false)
   const [listTitle, setListTitle] = useState('')
+  const [viewMode, setViewMode] = useState<'list' | 'board'>('list')
+  const [filterAssigned, setFilterAssigned] = useState(false)
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
   const [mounted, setMounted] = useState(false)
@@ -64,19 +73,23 @@ export function TasksView({ list, tasks: initial }: { list: List; tasks: Task[] 
     exitBulk()
   }
 
-  const open = tasks.filter(t => !t.completed_at).sort((a, b) => a.sort_order - b.sort_order)
-  const done = tasks.filter(t => !!t.completed_at)
+  const visibleTasks = filterAssigned && currentUserId
+    ? tasks.filter(t => t.assigned_to === currentUserId)
+    : tasks
+  const open = visibleTasks.filter(t => !t.completed_at).sort((a, b) => a.sort_order - b.sort_order)
+  const done = visibleTasks.filter(t => !!t.completed_at)
   const selectedTask = tasks.find(t => t.id === selected) ?? null
 
   async function addTask() {
     if (!newTitle.trim() || !list) return
-    const { data } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (supabase as any)
       .from('tasks')
-      .insert({ title: newTitle.trim(), list_id: list.id, sort_order: open.length })
-      .select('id, title, notes, priority, due_date, completed_at, sort_order, parent_id')
+      .insert({ title: newTitle.trim(), list_id: list.id, sort_order: open.length, status: 'todo' })
+      .select('id, title, notes, priority, due_date, completed_at, sort_order, parent_id, status, assigned_to')
       .single()
     if (data) {
-      setTasks(prev => [...prev, data])
+      setTasks(prev => [...prev, { ...data, status: data.status ?? 'todo', assigned_to: data.assigned_to ?? null }])
       setNewTitle('')
     }
   }
@@ -156,12 +169,33 @@ export function TasksView({ list, tasks: initial }: { list: List; tasks: Task[] 
             </>
           ) : (
             <>
+              {currentUserId && members.length > 0 && (
+                <button
+                  className={`${s.bulkCancelBtn} ${filterAssigned ? s.filterActive : ''}`}
+                  onClick={() => setFilterAssigned(f => !f)}
+                  title="Show only tasks assigned to me"
+                >
+                  Assigned to me
+                </button>
+              )}
+              <div className={s.viewToggle}>
+                <button className={`${s.viewBtn} ${viewMode === 'list' ? s.viewBtnActive : ''}`} onClick={() => setViewMode('list')} title="List view"><ListIcon /></button>
+                <button className={`${s.viewBtn} ${viewMode === 'board' ? s.viewBtnActive : ''}`} onClick={() => setViewMode('board')} title="Board view"><BoardIcon /></button>
+              </div>
               <button className={s.bulkCancelBtn} onClick={() => setBulkMode(true)}>Select</button>
               <ExportMenu tasks={tasks} listTitle={list.title} />
             </>
           )}
         </div>
 
+        {viewMode === 'board' ? (
+          <KanbanBoard
+            tasks={visibleTasks.filter(t => !t.parent_id)}
+            members={members}
+            onSelect={setSelected}
+          />
+        ) : (
+        <>
         <div className={s.addRow}>
           <input
             className={s.addInput}
@@ -224,12 +258,15 @@ export function TasksView({ list, tasks: initial }: { list: List; tasks: Task[] 
             ))}
           </div>
         )}
+        </>
+        )}
       </div>
 
       {selectedTask && (
         <TaskDetailPanel
           task={selectedTask}
           listId={list.id}
+          members={members}
           onClose={() => setSelected(null)}
           onUpdate={patch => {
             setTasks(prev => prev.map(t => t.id === selectedTask.id ? { ...t, ...patch } : t))
@@ -399,3 +436,5 @@ function ChevronIcon({ open }: { open: boolean }) {
 }
 function GripIcon() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="6" r="1" fill="currentColor"/><circle cx="15" cy="6" r="1" fill="currentColor"/><circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="18" r="1" fill="currentColor"/><circle cx="15" cy="18" r="1" fill="currentColor"/></svg> }
 function ExportIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> }
+function ListIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> }
+function BoardIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="4" height="15" rx="1"/></svg> }

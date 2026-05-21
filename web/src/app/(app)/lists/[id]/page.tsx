@@ -7,15 +7,17 @@ export default async function ListPage({ params }: { params: Promise<{ id: strin
   if (id === 'new') return <TasksView list={null} tasks={[]} />
 
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
   const [{ data: list }, { data: tasks }] = await Promise.all([
     supabase
       .from('todo_lists')
-      .select('id, title, color')
+      .select('id, title, color, workspace_id')
       .eq('id', id)
       .single(),
     supabase
       .from('tasks')
-      .select('id, title, notes, priority, due_date, completed_at, sort_order, parent_id')
+      .select('id, title, notes, priority, due_date, completed_at, sort_order, parent_id, status, assigned_to')
       .eq('list_id', id)
       .is('parent_id', null)
       .order('sort_order')
@@ -24,5 +26,40 @@ export default async function ListPage({ params }: { params: Promise<{ id: strin
 
   if (!list) notFound()
 
-  return <TasksView list={list} tasks={tasks ?? []} />
+  let members: { userId: string; displayName: string | null }[] = []
+  if (list.workspace_id) {
+    const { data: wm } = await supabase
+      .from('workspace_members')
+      .select('user_id')
+      .eq('workspace_id', list.workspace_id)
+    if (wm && wm.length > 0) {
+      const userIds = wm.map(m => m.user_id)
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, display_name')
+        .in('id', userIds)
+      const profileMap = new Map((profiles ?? []).map(p => [p.id, p.display_name]))
+      members = userIds.map(uid => ({ userId: uid, displayName: profileMap.get(uid) ?? null }))
+    }
+  }
+
+  type TaskRow = {
+    id: string; title: string; notes: string | null; priority: number
+    due_date: string | null; completed_at: string | null; sort_order: number
+    parent_id: string | null; status: string; assigned_to: string | null
+  }
+  const normalizedTasks: TaskRow[] = ((tasks ?? []) as unknown as TaskRow[]).map(t => ({
+    ...t,
+    status: t.status ?? 'todo',
+    assigned_to: t.assigned_to ?? null,
+  }))
+
+  return (
+    <TasksView
+      list={list}
+      tasks={normalizedTasks}
+      members={members}
+      currentUserId={user?.id}
+    />
+  )
 }

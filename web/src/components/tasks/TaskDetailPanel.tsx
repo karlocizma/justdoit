@@ -7,8 +7,15 @@ import s from './TaskDetailPanel.module.css'
 
 type TaskUpdate = Database['public']['Tables']['tasks']['Update']
 
-type Task = { id: string; title: string; notes: string | null; priority: number; due_date: string | null; completed_at: string | null; sort_order: number; parent_id: string | null }
+type Task = { id: string; title: string; notes: string | null; priority: number; due_date: string | null; completed_at: string | null; sort_order: number; parent_id: string | null; status: string; assigned_to: string | null }
 type SubTask = { id: string; title: string; completed_at: string | null }
+type Member = { userId: string; displayName: string | null }
+
+const STATUSES = [
+  { value: 'todo', label: 'To Do' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'done', label: 'Done' },
+]
 
 const PRIORITIES = [
   { value: 0, label: 'none' },
@@ -19,9 +26,10 @@ const PRIORITIES = [
 ]
 const PRIORITY_COLOR = ['var(--jd-fg-dim)', '#7b82a8', '#6c63ff', '#f5a623', '#e05c5c']
 
-export function TaskDetailPanel({ task, listId, onClose, onUpdate }: {
+export function TaskDetailPanel({ task, listId, members = [], onClose, onUpdate }: {
   task: Task
   listId: string
+  members?: Member[]
   onClose: () => void
   onUpdate: (patch: Partial<Task>) => void
 }) {
@@ -29,6 +37,8 @@ export function TaskDetailPanel({ task, listId, onClose, onUpdate }: {
   const [notes, setNotes] = useState(task.notes ?? '')
   const [dueDate, setDueDate] = useState(task.due_date ?? '')
   const [priority, setPriority] = useState(task.priority)
+  const [status, setStatus] = useState(task.status ?? 'todo')
+  const [assignedTo, setAssignedTo] = useState<string | null>(task.assigned_to)
   const [subTasks, setSubTasks] = useState<SubTask[]>([])
   const [subInput, setSubInput] = useState('')
   const [subLoaded, setSubLoaded] = useState(false)
@@ -45,9 +55,10 @@ export function TaskDetailPanel({ task, listId, onClose, onUpdate }: {
     setSubLoaded(true)
   }
 
-  async function save(patch: TaskUpdate) {
+  async function save(patch: TaskUpdate & { status?: string; assigned_to?: string | null }) {
     setSaving(true)
-    await supabase.from('tasks').update(patch).eq('id', task.id)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('tasks').update(patch).eq('id', task.id)
     onUpdate(patch as Partial<Task>)
     setSaving(false)
   }
@@ -94,6 +105,49 @@ export function TaskDetailPanel({ task, listId, onClose, onUpdate }: {
             ))}
           </div>
         </div>
+
+        <div className={s.fieldGroup}>
+          <label className={s.label}>Status</label>
+          <div className={s.statusRow}>
+            {STATUSES.map(st => (
+              <button
+                key={st.value}
+                className={`${s.statusBtn} ${status === st.value ? s.statusActive : ''}`}
+                onClick={async () => { setStatus(st.value); await save({ status: st.value }) }}
+              >
+                {st.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {members.length > 0 && (
+          <div className={s.fieldGroup}>
+            <label className={s.label}>Assigned to</label>
+            <div className={s.assigneeRow}>
+              <button
+                className={`${s.assigneeBtn} ${!assignedTo ? s.assigneeBtnActive : ''}`}
+                onClick={async () => { setAssignedTo(null); await save({ assigned_to: null }) }}
+              >
+                Unassigned
+              </button>
+              {members.map(m => {
+                const initials = m.displayName ? m.displayName.slice(0, 2).toUpperCase() : '?'
+                return (
+                  <button
+                    key={m.userId}
+                    className={`${s.assigneeBtn} ${assignedTo === m.userId ? s.assigneeBtnActive : ''}`}
+                    title={m.displayName ?? m.userId}
+                    onClick={async () => { setAssignedTo(m.userId); await save({ assigned_to: m.userId }) }}
+                  >
+                    <span className={s.assigneeAvatar}>{initials}</span>
+                    <span>{m.displayName ?? 'Member'}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         <div className={s.fieldGroup}>
           <label className={s.label}>Due date</label>

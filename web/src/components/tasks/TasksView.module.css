@@ -324,3 +324,29 @@
 }
 
 .bulkCheckActive { background: var(--jd-accent); border-color: var(--jd-accent); }
+
+/* View toggle */
+.viewToggle {
+  display: flex;
+  gap: 2px;
+  background: var(--jd-surface);
+  border: 1px solid var(--jd-border);
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.viewBtn {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 7px;
+  color: var(--jd-fg-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background 120ms, color 120ms;
+}
+.viewBtn:hover { color: var(--jd-fg); }
+.viewBtnActive { background: var(--jd-surface-2); color: var(--jd-fg) !important; }
+
+.filterActive { background: var(--jd-accent-soft) !important; color: var(--jd-accent) !important; border-color: var(--jd-accent) !important; }
