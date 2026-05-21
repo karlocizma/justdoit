@@ -73,6 +73,8 @@ The API is entirely Supabase — no custom HTTP server:
 
 All migrations live in `supabase/migrations/` and are applied lexicographically. After any schema change, run `npm run types` and commit the updated `shared/database.types.ts`.
 
+**Types lag:** when a migration adds columns or tables not yet reflected in `shared/database.types.ts`, Supabase client calls using those new columns will fail TypeScript. Use `(supabase as any).from(...)` as a short-term workaround and regenerate types at the next opportunity. This currently applies to `note_versions` (table), and `tasks.status` / `tasks.assigned_to` (columns).
+
 **Background jobs** (Trigger.dev v3, `trigger/jobs/`): `reminder.ts`, `recurring-tasks.ts` (cron), `email-digest.ts` (cron), `export.ts`, `email-auth.ts`. Email delivery uses Resend. Both are optional — the app degrades gracefully without `TRIGGER_SECRET_KEY` or `RESEND_API_KEY`.
 
 ### Frontend (`web/`)
@@ -80,7 +82,7 @@ All migrations live in `supabase/migrations/` and are applied lexicographically.
 Next.js 16 with React 19. **This version has breaking changes from prior Next.js versions** — read `node_modules/next/dist/docs/` before writing any Next.js-specific code.
 
 **Route groups:**
-- `(app)/` — authenticated routes (dashboard, notes, lists, search, settings, archive, trash); protected by the layout at `src/app/(app)/layout.tsx` which redirects unauthenticated users
+- `(app)/` — authenticated routes (dashboard, notes, lists, search, settings, archive, trash, graph, calendar, workspaces); protected by the layout at `src/app/(app)/layout.tsx` which redirects unauthenticated users
 - `(auth)/` — login, register, forgot-password, reset-password
 - `auth/callback/route.ts` — OAuth exchange handler
 

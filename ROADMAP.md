@@ -27,16 +27,6 @@ Installable from the browser on desktop and mobile. Pairs directly with offline 
 
 ---
 
-### Task Assignment in Workspaces
-Add an `assigned_to uuid` column to `tasks` referencing `auth.users`. Show an assignee avatar picker in the task detail. Add a "Assigned to me" filter in the task list. Scope: one migration, small UI changes.
-
----
-
-### Note Version History
-Store a content snapshot in a new `note_versions` table whenever a note is saved (debounced — not every keystroke). Show a "History" panel in the NoteEditor where the user can preview and restore any past version.
-
----
-
 ### Comments on Shared Notes
 Discussion threads on notes inside a workspace. New `note_comments` table (columns: `id`, `note_id`, `user_id`, `content`, `created_at`). Comments shown in a collapsible panel at the bottom of the NoteEditor, visible only to workspace members. Natural follow-on to the activity feed.
 
@@ -44,11 +34,6 @@ Discussion threads on notes inside a workspace. New `note_comments` table (colum
 
 ### Mentions in Workspaces
 `@name` autocomplete in note content and task titles. Triggers a browser push notification and/or in-app badge for the mentioned member. Needs a mentions lookup in the workspace member list and changes to the push notification delivery flow.
-
----
-
-### Kanban Board View
-Alternative view for a task list — columns for status stages (To Do / In Progress / Done). Drag cards between columns. Requires an `status` column on `tasks` and significant UI work; uses the existing `@dnd-kit` dependency.
 
 ---
 
@@ -67,6 +52,9 @@ A React Native app sharing auth and data with the same Supabase backend. The API
 ## Completed
 
 ### Frontend Features
+- [x] **Kanban board view** — toggle between list and board view in any task list; drag cards between To Do / In Progress / Done columns via `@dnd-kit`; status synced to DB; assignee avatar and priority badge on cards
+- [x] **Note version history** — throttled snapshots saved to `note_versions` table; History panel in the note editor with version list, diff preview, and one-click restore
+- [x] **Task assignment in workspaces** — `assigned_to` column on `tasks`; workspace member picker in the task detail panel; "Assigned to me" filter toggle in the task list header; status picker (To Do / In Progress / Done) in task detail
 - [x] **Two-factor authentication (2FA)** — TOTP-based 2FA via Supabase Auth MFA (`enrollMFA` / `challengeMFA`); enrollment UI with QR code in Settings → Two-factor authentication; `mfa-challenge` screen in the login flow
 - [x] **Note Graph View** — `/graph` route with D3.js force-directed canvas showing `[[Title]]` note connections; zoom/pan/drag; node tooltips; click to open note; linked-only or show-all toggle
 - [x] **Attachment uploads in notes** — "📎 Attach" button in the format bar uploads files/images to the `note-attachments` Supabase Storage bucket; inserts a Markdown image or link at cursor position
