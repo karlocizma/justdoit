@@ -452,6 +452,71 @@
   color: var(--jd-fg-dim);
 }
 
+/* Due date picker */
+.dueWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.dueBadge {
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 4px;
+  color: var(--jd-accent);
+}
+
+.dueOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+}
+
+.duePicker {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 100;
+  background: var(--jd-surface-raised);
+  border: 1px solid var(--jd-border);
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: var(--jd-shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 220px;
+}
+
+.dueDateInput {
+  background: var(--jd-surface);
+  border: 1px solid var(--jd-border);
+  border-radius: 6px;
+  padding: 7px 10px;
+  color: var(--jd-fg);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  width: 100%;
+  transition: border-color 150ms;
+}
+
+.dueDateInput:focus { border-color: var(--jd-accent); }
+
+.dueClearBtn {
+  background: transparent;
+  border: 1px solid var(--jd-border);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--jd-fg-dim);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 100ms, color 100ms;
+}
+
+.dueClearBtn:hover { background: var(--jd-danger-soft, rgba(224,92,92,0.12)); color: var(--jd-danger); }
+
 /* Save as template inline prompt */
 .saveTemplateInline {
   display: flex;

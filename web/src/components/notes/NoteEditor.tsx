@@ -12,7 +12,7 @@ import s from './NoteEditor.module.css'
 type NoteUpdate = Database['public']['Tables']['notes']['Update']
 type Tag = { id: string; name: string; color: string | null }
 type NoteTag = { tags: Tag }
-type Note = { id: string; title: string; content: string; color: string | null; is_pinned: boolean; updated_at: string; note_tags: NoteTag[] }
+type Note = { id: string; title: string; content: string; color: string | null; is_pinned: boolean; due_at?: string | null; updated_at: string; note_tags: NoteTag[] }
 
 const COLORS = ['#8b7cff', '#5b9bff', '#48d1cc', '#4caf89', '#f5a623', '#e05c8b', '#e05c5c', null]
 
@@ -23,6 +23,8 @@ export function NoteEditor({ note }: { note: Note }) {
   const [content, setContent] = useState(note.content ?? '')
   const [pinned, setPinned] = useState(note.is_pinned)
   const [color, setColor] = useState<string | null>(note.color)
+  const [dueAt, setDueAt] = useState<string | null>(note.due_at ?? null)
+  const [showDuePicker, setShowDuePicker] = useState(false)
   const [saving, setSaving] = useState(false)
   const [mode, setMode] = useState<'edit' | 'preview'>('edit')
   const [tags, setTags] = useState<Tag[]>(note.note_tags?.map(nt => nt.tags).filter(Boolean) ?? [])
@@ -303,6 +305,42 @@ export function NoteEditor({ note }: { note: Note }) {
               />
             ))}
           </div>
+          <div className={s.dueWrap}>
+            <button
+              className={`${s.toolBtn} ${dueAt ? s.active : ''}`}
+              onClick={() => setShowDuePicker(v => !v)}
+              title={dueAt ? `Due: ${formatDueLabel(dueAt)}` : 'Set due date'}
+            >
+              <DueDateIcon />
+              {dueAt && <span className={s.dueBadge}>{formatDueLabel(dueAt)}</span>}
+            </button>
+            {showDuePicker && (
+              <>
+                <div className={s.dueOverlay} onClick={() => setShowDuePicker(false)} />
+                <div className={s.duePicker}>
+                  <input
+                    type="datetime-local"
+                    className={s.dueDateInput}
+                    value={dueAt ? dueAt.slice(0, 16) : ''}
+                    onChange={async e => {
+                      const val = e.target.value ? new Date(e.target.value).toISOString() : null
+                      setDueAt(val)
+                      await save({ due_at: val } as NoteUpdate)
+                    }}
+                  />
+                  {dueAt && (
+                    <button className={s.dueClearBtn} onClick={async () => {
+                      setDueAt(null)
+                      setShowDuePicker(false)
+                      await save({ due_at: null } as NoteUpdate)
+                    }}>
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
           <button className={s.toolBtn} onClick={archive} title="Archive"><ArchiveIcon /></button>
           <button className={`${s.toolBtn} ${s.danger}`} onClick={trash} title="Trash"><TrashIcon /></button>
           <button className={s.toolBtn} onClick={() => exportNote(title, content)} title="Download as .md"><DownloadIcon /></button>
@@ -489,6 +527,17 @@ export function NoteEditor({ note }: { note: Note }) {
   )
 }
 
+function formatDueLabel(iso: string) {
+  const d = new Date(iso)
+  const today = new Date()
+  const diff = Math.floor((d.getTime() - today.setHours(0,0,0,0)) / 86400000)
+  if (diff === 0) return 'Today'
+  if (diff === 1) return 'Tomorrow'
+  if (diff === -1) return 'Yesterday'
+  if (diff > 0 && diff < 7) return d.toLocaleDateString('en-US', { weekday: 'short' })
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
 function exportNote(noteTitle: string, noteContent: string) {
   const md = `# ${noteTitle}\n\n${noteContent}`
   const blob = new Blob([md], { type: 'text/markdown' })
@@ -507,6 +556,7 @@ function TrashIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fi
 function LinkIcon() { return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg> }
 function DownloadIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> }
 function BacklinkIcon() { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg> }
+function DueDateIcon() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> }
 function ChevronSmIcon({ open }: { open: boolean }) {
   return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 150ms', flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>
 }

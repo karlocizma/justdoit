@@ -41,23 +41,14 @@ These would call a new Edge Function that proxies to the Anthropic API with the 
 ### Mobile App
 A React Native app sharing auth and data with the same Supabase backend. The API is already fully in place. Offline mode (above) is a prerequisite for a good mobile experience.
 
-### Shared Workspace Improvements
-- Workspace-level roles: fine-grained permissions (read-only member vs. editor vs. admin)
-- Activity feed: see what teammates changed recently
-- @mentions in notes that notify the mentioned user
-
-### Due Dates on Notes
-Notes can have a `due_at` timestamp alongside tasks. Appears in the calendar view and daily digest.
-
-### Calendar Enhancements
-- Weekly view alongside the current monthly view
-- Drag-and-drop on the calendar to reschedule tasks
-
 ---
 
 ## Completed
 
 ### Frontend Features
+- [x] **Shared workspace improvements** — role management UI (owners can promote/demote/remove members), role badges (owner/admin/member), recent activity feed per workspace
+- [x] **Due dates on notes** — `due_at` column on `notes`, date-time picker in NoteEditor toolbar with clear button and relative label; notes appear on the Calendar
+- [x] **Calendar enhancements** — Month/Week view toggle; notes with due dates shown as diamond dots alongside task dots; drag-and-drop to reschedule tasks and notes onto different days (updates DB on drop)
 - [x] **Custom note templates** — "Save as template" in the format bar stores any note's content to `profiles.settings.templates`; template modal shows "My templates" section with per-template delete, alongside 6 built-in templates
 - [x] **Backlinks index** — collapsible "Backlinks" panel at the bottom of each note showing all notes that link to it via `[[Title]]`; powered by `ilike` content search, no extra migration needed
 - [x] **Drag-and-drop reorder** — tasks within a list (grip handle + dnd-kit), lists in the sidebar, notes in the grid; all persisted via Supabase RPCs (`reorder_tasks`, `reorder_todo_lists`, `reorder_notes`)

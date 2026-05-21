@@ -71,6 +71,7 @@ export type Database = {
           content_tsv: unknown
           created_at: string
           deleted_at: string | null
+          due_at: string | null
           id: string
           is_archived: boolean
           is_pinned: boolean
@@ -86,6 +87,7 @@ export type Database = {
           content_tsv?: unknown
           created_at?: string
           deleted_at?: string | null
+          due_at?: string | null
           id?: string
           is_archived?: boolean
           is_pinned?: boolean
@@ -101,6 +103,7 @@ export type Database = {
           content_tsv?: unknown
           created_at?: string
           deleted_at?: string | null
+          due_at?: string | null
           id?: string
           is_archived?: boolean
           is_pinned?: boolean

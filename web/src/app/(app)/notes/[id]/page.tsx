@@ -7,7 +7,7 @@ export default async function NotePage({ params }: { params: Promise<{ id: strin
   const supabase = await createClient()
   const { data: note } = await supabase
     .from('notes')
-    .select('id, title, content, color, is_pinned, updated_at, note_tags(tags(id, name, color))')
+    .select('id, title, content, color, is_pinned, due_at, updated_at, note_tags(tags(id, name, color))')
     .eq('id', id)
     .is('deleted_at', null)
     .single()
