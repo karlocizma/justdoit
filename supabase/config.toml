@@ -406,6 +406,11 @@ allow_dynamic_registration = false
 [functions.reminder-webhook]
 verify_jwt = false
 
+# Public calendar feed: clients (Google/Apple/Outlook) poll with no auth header.
+# Authentication is the per-user feed token in the query string instead.
+[functions.calendar-feed]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.

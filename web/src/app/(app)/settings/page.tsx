@@ -22,7 +22,7 @@ export default async function SettingsPage() {
     accepted: m.accepted_at !== null,
   }))
 
-  const settings = (profile?.settings ?? {}) as { digest_enabled?: boolean; anthropic_api_key?: string }
+  const settings = (profile?.settings ?? {}) as { digest_enabled?: boolean; anthropic_api_key?: string; calendar_feed_token?: string }
 
   return (
     <SettingsView
@@ -35,6 +35,7 @@ export default async function SettingsPage() {
       memberships={memberships}
       digestEnabled={settings.digest_enabled ?? false}
       hasApiKey={!!settings.anthropic_api_key}
+      calendarToken={settings.calendar_feed_token ?? null}
     />
   )
 }

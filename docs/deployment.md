@@ -38,7 +38,7 @@ After `db push`, confirm these tables exist in the dashboard:
 supabase functions deploy
 ```
 
-This deploys all 8 functions:
+This deploys all functions:
 
 | Function | Purpose |
 |---|---|
@@ -50,6 +50,10 @@ This deploys all 8 functions:
 | `workspace-invite` | Sends workspace invitation emails |
 | `push-subscribe` | Saves / removes browser push subscriptions |
 | `push-send` | Sends VAPID-signed push notifications to a user's devices |
+| `ai` | AI actions proxied to Anthropic |
+| `calendar-feed` | Public ICS calendar feed (see note below) |
+
+The `calendar-feed` function is public — calendar clients poll it with no auth header, so it runs with `verify_jwt = false` (declared in `supabase/config.toml`, which `supabase functions deploy` respects). It authenticates via a per-user token in the query string and reads data with the auto-injected `SUPABASE_SERVICE_ROLE_KEY` (no extra secret needed). Same pattern as `reminder-webhook`.
 
 ### Set Edge Function secrets
 

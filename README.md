@@ -2,7 +2,7 @@
 
 **Notes & Tasks, done right.**
 
-A full-stack productivity app — Markdown notes with tags, to-do lists with sub-tasks, kanban board view, task assignment, note version history, reminders, recurring tasks, file attachments, shared workspaces, comments on shared notes, real-time sync, calendar view, browser push notifications, AI-powered note summarization, tag suggestions, task extraction, smart search, an installable PWA, offline support for notes/tasks/lists, and more.
+A full-stack productivity app — Markdown notes with tags, to-do lists with sub-tasks, kanban board view, task assignment, note version history, reminders, recurring tasks, file attachments, shared workspaces, comments on shared notes, real-time sync, calendar view, browser push notifications, AI-powered note summarization, tag suggestions, task extraction, smart search, an installable PWA, a native desktop app, offline support for notes/tasks/lists, an ICS calendar feed, and more.
 
 This is a **monorepo** containing the complete application:
 
@@ -236,6 +236,7 @@ See [`docs/api-reference.md`](docs/api-reference.md) for complete documentation.
 | Edge Fn | `POST /functions/v1/push-subscribe` | Save or remove a browser push subscription |
 | Edge Fn | `POST /functions/v1/push-send` | Send a push notification to a user's devices |
 | Edge Fn | `POST /functions/v1/ai` | AI actions: `summarize`, `suggest-tags`, `generate-tasks`, `smart-search` (proxies to Anthropic) |
+| Edge Fn | `GET /functions/v1/calendar-feed?token=…` | Public ICS feed of due-dated tasks/notes (per-user feed token, no JWT) |
 
 ---
 

@@ -8,24 +8,26 @@ import s from './SettingsView.module.css'
 
 type User = { id: string; email: string; display_name: string | null; avatar_url: string | null }
 type Membership = { workspaceId: string; workspaceName: string; role: string; accepted: boolean }
-type Section = 'profile' | 'password' | 'workspaces' | 'notifications' | 'ai' | 'security' | 'export' | 'account'
+type Section = 'profile' | 'password' | 'workspaces' | 'notifications' | 'calendar' | 'ai' | 'security' | 'export' | 'account'
 
 const NAV: { id: Section; label: string; icon: React.ReactNode }[] = [
   { id: 'profile',       label: 'Profile',        icon: <UserIcon /> },
   { id: 'password',      label: 'Password',       icon: <LockIcon /> },
   { id: 'workspaces',    label: 'Workspaces',     icon: <WorkspaceIcon /> },
   { id: 'notifications', label: 'Notifications',  icon: <BellIcon /> },
+  { id: 'calendar',      label: 'Calendar feed',  icon: <CalendarIcon /> },
   { id: 'ai',            label: 'AI',             icon: <SparkIcon /> },
   { id: 'security',      label: 'Security',       icon: <ShieldIcon /> },
   { id: 'export',        label: 'Export',         icon: <DownloadIcon /> },
   { id: 'account',       label: 'Account',        icon: <AccountIcon /> },
 ]
 
-export function SettingsView({ user, memberships: initialMemberships, digestEnabled: initialDigest, hasApiKey: initialHasApiKey }: {
+export function SettingsView({ user, memberships: initialMemberships, digestEnabled: initialDigest, hasApiKey: initialHasApiKey, calendarToken: initialCalendarToken }: {
   user: User
   memberships: Membership[]
   digestEnabled: boolean
   hasApiKey: boolean
+  calendarToken: string | null
 }) {
   const router = useRouter()
   const supabase = createClient()
@@ -57,6 +59,14 @@ export function SettingsView({ user, memberships: initialMemberships, digestEnab
   // Digest
   const [digest, setDigest] = useState(initialDigest)
   const [digestSaving, setDigestSaving] = useState(false)
+
+  // Calendar feed
+  const [calendarToken, setCalendarToken] = useState(initialCalendarToken)
+  const [calendarBusy, setCalendarBusy] = useState(false)
+  const [calendarMsg, setCalendarMsg] = useState('')
+  const calendarUrl = calendarToken
+    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/calendar-feed?token=${calendarToken}`
+    : ''
 
   // AI key
   const [currentHasKey, setCurrentHasKey] = useState(initialHasApiKey)
@@ -266,6 +276,35 @@ export function SettingsView({ user, memberships: initialMemberships, digestEnab
     setApiKeySaving(false)
     setCurrentHasKey(false)
     setApiKeyMsg('API key removed.')
+  }
+
+  async function generateCalendarFeed() {
+    setCalendarBusy(true)
+    setCalendarMsg('')
+    const token = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '')
+    await mergeSettings({ calendar_feed_token: token })
+    setCalendarBusy(false)
+    setCalendarToken(token)
+    setCalendarMsg(calendarToken ? 'Feed URL regenerated — update your calendar subscription.' : 'Calendar feed enabled.')
+  }
+
+  async function disableCalendarFeed() {
+    setCalendarBusy(true)
+    setCalendarMsg('')
+    const { data: profile } = await supabase.from('profiles').select('settings').eq('id', user.id).single()
+    const settings = { ...(profile?.settings as Record<string, unknown> ?? {}) }
+    delete settings['calendar_feed_token']
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await supabase.from('profiles').update({ settings: settings as any }).eq('id', user.id)
+    setCalendarBusy(false)
+    setCalendarToken(null)
+    setCalendarMsg('Calendar feed disabled. Existing subscriptions will stop updating.')
+  }
+
+  async function copyCalendarUrl() {
+    if (!calendarUrl) return
+    await navigator.clipboard.writeText(calendarUrl)
+    setCalendarMsg('Feed URL copied to clipboard.')
   }
 
   async function startEnroll() {
@@ -526,6 +565,40 @@ export function SettingsView({ user, memberships: initialMemberships, digestEnab
           </div>
         )}
 
+        {/* ── Calendar feed ── */}
+        {active === 'calendar' && (
+          <div className={s.form}>
+            <p className={s.desc}>
+              Subscribe to your tasks and notes with due dates from Google Calendar, Apple Calendar,
+              Outlook, or any app that supports iCalendar (ICS) feeds. The feed is read-only and updates
+              automatically as your calendar app polls it.
+            </p>
+
+            {!calendarToken ? (
+              <button className={s.saveBtn} onClick={generateCalendarFeed} disabled={calendarBusy}>
+                {calendarBusy ? 'Enabling…' : 'Enable calendar feed'}
+              </button>
+            ) : (
+              <>
+                <div className={s.field}>
+                  <label className={s.label}>Subscription URL</label>
+                  <input className={s.input} type="text" value={calendarUrl} readOnly onFocus={e => e.target.select()} />
+                  <p className={s.desc}>
+                    Add this as a subscribed/internet calendar in your calendar app. Anyone with this URL can
+                    read your due dates — treat it like a password.
+                  </p>
+                </div>
+                <div className={s.btnRow}>
+                  <button className={s.saveBtn} onClick={copyCalendarUrl} disabled={calendarBusy}>Copy URL</button>
+                  <button className={s.secondaryBtn} onClick={generateCalendarFeed} disabled={calendarBusy}>Regenerate</button>
+                  <button className={s.dangerBtn} onClick={disableCalendarFeed} disabled={calendarBusy}>Disable</button>
+                </div>
+              </>
+            )}
+            {calendarMsg && <div className={calendarMsg.includes('disabled') ? s.error : s.success}>{calendarMsg}</div>}
+          </div>
+        )}
+
         {/* ── AI ── */}
         {active === 'ai' && (
           <div className={s.form}>
@@ -656,6 +729,7 @@ function UserIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fil
 function LockIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> }
 function WorkspaceIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg> }
 function BellIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg> }
+function CalendarIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> }
 function SparkIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> }
 function ShieldIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> }
 function DownloadIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> }
