@@ -9,6 +9,7 @@ export {
   getNote,
   listLists,
   listTasksByList,
+  listTopLevelTasks,
   createNote,
   updateNote,
   archiveNote,
@@ -16,11 +17,19 @@ export {
   restoreNote,
   deleteNoteHard,
   reorderNotes,
+  createTask,
+  updateTask,
+  toggleTask,
+  deleteTaskHard,
+  reorderTasks,
+  createList,
+  reorderLists,
   cacheUpsert,
   cacheUpsertMany,
   cacheDelete,
   cacheDeleteMany,
 } from './repository'
+export { nextOccurrence, toggleTaskState, type Recurrence } from './recurrence'
 export { useOnlineStatus, isOnline } from './status'
 export { isNewer, shouldApplyRemote, resolveIncoming, highWatermark } from './merge'
 export type {

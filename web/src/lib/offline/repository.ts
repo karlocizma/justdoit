@@ -1,6 +1,7 @@
 import { getDB } from './db'
 import { isNewer } from './merge'
 import { enqueue, flushSoon } from './outbox'
+import { toggleTaskState } from './recurrence'
 import type { CachedNote, CachedTask, CachedList, SyncEntity } from './types'
 
 /**
@@ -46,6 +47,12 @@ export async function listLists(): Promise<CachedList[]> {
 export async function listTasksByList(listId: string): Promise<CachedTask[]> {
   const rows = await getDB().tasks.where('list_id').equals(listId).toArray()
   return rows.sort((a, b) => a.sort_order - b.sort_order)
+}
+
+/** Top-level tasks of a list (excludes sub-tasks), ordered like the list view. */
+export async function listTopLevelTasks(listId: string): Promise<CachedTask[]> {
+  const rows = await getDB().tasks.where('list_id').equals(listId).toArray()
+  return rows.filter((t) => !t.parent_id).sort((a, b) => a.sort_order - b.sort_order)
 }
 
 // ---- Note writes (optimistic) ---------------------------------------------
@@ -102,15 +109,125 @@ export async function deleteNoteHard(id: string): Promise<void> {
 
 /** Persist a new ordering for notes (sort_order = position), queuing per-row updates. */
 export async function reorderNotes(orderedIds: string[]): Promise<void> {
+  await reorderEntity('notes', orderedIds)
+}
+
+// ---- Task writes (optimistic) ---------------------------------------------
+
+/** Create a task locally with a client-generated id and queue the insert. */
+export async function createTask(fields: {
+  list_id: string
+  title: string
+  sort_order?: number
+  status?: string
+  parent_id?: string | null
+}): Promise<CachedTask> {
+  const id = newId()
+  const ts = nowIso()
+  const row: CachedTask = {
+    id,
+    list_id: fields.list_id,
+    parent_id: fields.parent_id ?? null,
+    title: fields.title,
+    notes: null,
+    priority: 0,
+    is_completed: false,
+    completed_at: null,
+    due_date: null,
+    due_time: null,
+    recurrence: null,
+    sort_order: fields.sort_order ?? 0,
+    status: fields.status ?? 'todo',
+    assigned_to: null,
+    created_at: ts,
+    updated_at: ts,
+  }
+  await getDB().tasks.put(row)
+  const payload: Record<string, unknown> = { id, title: row.title, list_id: row.list_id, sort_order: row.sort_order }
+  if (fields.status) payload.status = fields.status
+  if (fields.parent_id) payload.parent_id = fields.parent_id
+  await enqueue({ entity: 'tasks', op: 'insert', entityId: id, payload })
+  flushSoon()
+  return row
+}
+
+/** Patch a cached task and queue the update. `updated_at` is left to the DB trigger. */
+export async function updateTask(id: string, patch: Partial<CachedTask>): Promise<void> {
   const db = getDB()
-  await db.transaction('rw', db.notes, db.outbox, async () => {
+  const existing = await db.tasks.get(id)
+  const { updated_at: _ua, ...serverPatch } = patch
+  void _ua
+  if (existing) await db.tasks.put({ ...existing, ...patch, updated_at: nowIso() })
+  await enqueue({ entity: 'tasks', op: 'update', entityId: id, payload: serverPatch })
+  flushSoon()
+}
+
+/**
+ * Toggle a task's completion, replicating the server's recurrence handling
+ * (advances recurring tasks instead of marking them done). Falls back to a
+ * plain toggle when the row isn't cached (e.g. an on-demand sub-task).
+ */
+export async function toggleTask(id: string, fallback?: { completed_at: string | null }): Promise<void> {
+  const existing = await getDB().tasks.get(id)
+  const source = existing ?? (fallback ? { completed_at: fallback.completed_at, due_date: null, recurrence: null } : null)
+  if (!source) return
+  await updateTask(id, toggleTaskState(source))
+}
+
+/** Permanently delete a task locally and queue the server delete. */
+export async function deleteTaskHard(id: string): Promise<void> {
+  await getDB().tasks.delete(id)
+  await enqueue({ entity: 'tasks', op: 'delete', entityId: id, payload: {} })
+  flushSoon()
+}
+
+/** Persist a new ordering for tasks (sort_order = position), queuing per-row updates. */
+export async function reorderTasks(orderedIds: string[]): Promise<void> {
+  await reorderEntity('tasks', orderedIds)
+}
+
+// ---- List writes (optimistic) ---------------------------------------------
+
+/** Create a list locally with a client-generated id and queue the insert. */
+export async function createList(fields: { title: string; color?: string | null }): Promise<CachedList> {
+  const id = newId()
+  const ts = nowIso()
+  const row: CachedList = {
+    id,
+    user_id: '',
+    workspace_id: null,
+    title: fields.title,
+    color: fields.color ?? '#6c63ff',
+    icon: null,
+    is_archived: false,
+    sort_order: 0,
+    created_at: ts,
+    updated_at: ts,
+  }
+  await getDB().todo_lists.put(row)
+  await enqueue({ entity: 'todo_lists', op: 'insert', entityId: id, payload: { id, title: row.title, color: row.color } })
+  flushSoon()
+  return row
+}
+
+/** Persist a new ordering for lists (sort_order = position), queuing per-row updates. */
+export async function reorderLists(orderedIds: string[]): Promise<void> {
+  await reorderEntity('todo_lists', orderedIds)
+}
+
+// ---- Shared reorder helper ------------------------------------------------
+
+async function reorderEntity(entity: 'notes' | 'tasks' | 'todo_lists', orderedIds: string[]): Promise<void> {
+  const db = getDB()
+  const table = db.table(entity)
+  await db.transaction('rw', table, db.outbox, async () => {
     for (let i = 0; i < orderedIds.length; i++) {
       const id = orderedIds[i]
-      const existing = await db.notes.get(id)
+      const existing = await table.get(id)
       if (!existing || existing.sort_order === i) continue
-      await db.notes.put({ ...existing, sort_order: i, updated_at: nowIso() })
+      await table.put({ ...existing, sort_order: i, updated_at: nowIso() })
       await db.outbox.add({
-        entity: 'notes', op: 'update', entityId: id, payload: { sort_order: i },
+        entity, op: 'update', entityId: id, payload: { sort_order: i },
         status: 'pending', attempts: 0, createdAt: nowIso(),
       })
     }

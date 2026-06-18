@@ -17,7 +17,7 @@ export default async function ListPage({ params }: { params: Promise<{ id: strin
       .single(),
     supabase
       .from('tasks')
-      .select('id, title, notes, priority, due_date, completed_at, sort_order, parent_id, status, assigned_to')
+      .select('id, list_id, title, notes, priority, is_completed, due_date, due_time, recurrence, completed_at, sort_order, parent_id, status, assigned_to, created_at, updated_at')
       .eq('list_id', id)
       .is('parent_id', null)
       .order('sort_order')

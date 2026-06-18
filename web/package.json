@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test:offline": "tsx scripts/test-offline-merge.ts && tsx scripts/test-offline-outbox.ts"
+    "test:offline": "tsx scripts/test-offline-merge.ts && tsx scripts/test-offline-recurrence.ts && tsx scripts/test-offline-outbox.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

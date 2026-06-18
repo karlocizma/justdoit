@@ -12,7 +12,7 @@ import {
   useDroppable,
   useDraggable,
 } from '@dnd-kit/core'
-import { createClient } from '@/lib/supabase/client'
+import { updateTask } from '@/lib/offline'
 import s from './KanbanBoard.module.css'
 
 type Task = {
@@ -39,7 +39,6 @@ export function KanbanBoard({ tasks: initial, members = [], onSelect }: {
   members?: Member[]
   onSelect: (id: string) => void
 }) {
-  const supabase = createClient()
   const [tasks, setTasks] = useState(initial)
   const [draggingId, setDraggingId] = useState<string | null>(null)
 
@@ -59,8 +58,7 @@ export function KanbanBoard({ tasks: initial, members = [], onSelect }: {
     const task = tasks.find(t => t.id === taskId)
     if (!task || task.status === newStatus) return
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t))
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from('tasks').update({ status: newStatus }).eq('id', taskId)
+    await updateTask(taskId, { status: newStatus })
   }
 
   return (

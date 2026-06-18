@@ -19,6 +19,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { createClient } from '@/lib/supabase/client'
+import { reorderLists } from '@/lib/offline'
 import s from './Sidebar.module.css'
 
 type List = { id: string; title: string; color: string; open_count: number }
@@ -78,8 +79,7 @@ export function Sidebar({ lists: initialLists, user, workspaces = [], pendingInv
     const newIndex = lists.findIndex(l => l.id === over.id)
     const reordered = arrayMove(lists, oldIndex, newIndex)
     setLists(reordered)
-    const updates = reordered.map((l, i) => ({ id: l.id, sort_order: i }))
-    await supabase.rpc('reorder_todo_lists', { updates })
+    await reorderLists(reordered.map(l => l.id))
   }
 
   const nav = (href: string) => `${s.navItem}${pathname === href || pathname.startsWith(href + '/') ? ' ' + s.active : ''}`

@@ -13,7 +13,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
-import { createClient } from '@/lib/supabase/client'
+import { updateTask, updateNote } from '@/lib/offline'
 import s from './CalendarView.module.css'
 
 type Task = {
@@ -40,7 +40,6 @@ const PRIORITY_COLOR: Record<number, string> = {
 
 export function CalendarView({ tasks: initialTasks, notes: initialNotes }: { tasks: Task[]; notes: CalNote[] }) {
   const today = new Date()
-  const supabase = createClient()
   const [tasks, setTasks] = useState(initialTasks)
   const [notes, setNotes] = useState(initialNotes)
   const [year, setYear] = useState(today.getFullYear())
@@ -137,7 +136,7 @@ export function CalendarView({ tasks: initialTasks, notes: initialNotes }: { tas
 
     if (type === 'task') {
       setTasks(prev => prev.map(t => t.id === id ? { ...t, due_date: newDate } : t))
-      await supabase.from('tasks').update({ due_date: newDate }).eq('id', id)
+      await updateTask(id, { due_date: newDate })
     } else if (type === 'note') {
       const existing = notes.find(n => n.id === id)
       if (!existing) return
@@ -145,7 +144,7 @@ export function CalendarView({ tasks: initialTasks, notes: initialNotes }: { tas
         ? new Date(newDate + 'T' + (existing.due_at.slice(11, 16) || '00:00')).toISOString()
         : new Date(newDate).toISOString()
       setNotes(prev => prev.map(n => n.id === id ? { ...n, due_at: newIso } : n))
-      await supabase.from('notes').update({ due_at: newIso }).eq('id', id)
+      await updateNote(id, { due_at: newIso })
     }
   }
 

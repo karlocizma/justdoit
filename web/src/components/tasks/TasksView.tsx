@@ -17,7 +17,12 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { createClient } from '@/lib/supabase/client'
+import { useLiveQuery } from 'dexie-react-hooks'
+import {
+  listTopLevelTasks, seedCache, createTask, updateTask, toggleTask as repoToggleTask,
+  deleteTaskHard, reorderTasks, createList as repoCreateList,
+} from '@/lib/offline'
+import { isOfflineCacheAvailable } from '@/lib/offline/db'
 import { TaskDetailPanel } from './TaskDetailPanel'
 import { KanbanBoard } from './KanbanBoard'
 import s from './TasksView.module.css'
@@ -36,8 +41,6 @@ export function TasksView({ list, tasks: initial, members = [], currentUserId }:
   currentUserId?: string
 }) {
   const router = useRouter()
-  const supabase = createClient()
-  const [tasks, setTasks] = useState(initial)
   const [selected, setSelected] = useState<string | null>(null)
   const [newTitle, setNewTitle] = useState('')
   const [showDone, setShowDone] = useState(false)
@@ -49,6 +52,22 @@ export function TasksView({ list, tasks: initial, members = [], currentUserId }:
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
 
+  // Seed the cache from server props, then render reactively so optimistic
+  // writes (incl. offline) appear instantly and survive reloads.
+  const [seeded, setSeeded] = useState(false)
+  useEffect(() => {
+    if (!isOfflineCacheAvailable()) { setSeeded(true); return }
+    void seedCache('tasks', initial as unknown as Record<string, unknown>[]).finally(() => setSeeded(true))
+  }, [initial])
+
+  const live = useLiveQuery(
+    () => (isOfflineCacheAvailable() && list ? listTopLevelTasks(list.id) : undefined),
+    [list?.id],
+  )
+  const tasks: Task[] = seeded
+    ? ((live as Task[] | undefined)?.map(t => ({ ...t, status: t.status ?? 'todo', assigned_to: t.assigned_to ?? null })) ?? initial)
+    : initial
+
   const [bulkMode, setBulkMode] = useState(false)
   const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set())
 
@@ -59,17 +78,13 @@ export function TasksView({ list, tasks: initial, members = [], currentUserId }:
   function exitBulk() { setBulkMode(false); setBulkSelected(new Set()) }
 
   async function bulkDelete() {
-    const ids = Array.from(bulkSelected)
-    await supabase.from('tasks').delete().in('id', ids)
-    setTasks(prev => prev.filter(t => !bulkSelected.has(t.id)))
+    await Promise.all(Array.from(bulkSelected).map(id => deleteTaskHard(id)))
     exitBulk()
   }
 
   async function bulkComplete() {
-    const ids = Array.from(bulkSelected)
     const now = new Date().toISOString()
-    await supabase.from('tasks').update({ completed_at: now }).in('id', ids)
-    setTasks(prev => prev.map(t => bulkSelected.has(t.id) ? { ...t, completed_at: now } : t))
+    await Promise.all(Array.from(bulkSelected).map(id => updateTask(id, { completed_at: now, is_completed: true })))
     exitBulk()
   }
 
@@ -82,25 +97,12 @@ export function TasksView({ list, tasks: initial, members = [], currentUserId }:
 
   async function addTask() {
     if (!newTitle.trim() || !list) return
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data } = await (supabase as any)
-      .from('tasks')
-      .insert({ title: newTitle.trim(), list_id: list.id, sort_order: open.length, status: 'todo' })
-      .select('id, title, notes, priority, due_date, completed_at, sort_order, parent_id, status, assigned_to')
-      .single()
-    if (data) {
-      setTasks(prev => [...prev, { ...data, status: data.status ?? 'todo', assigned_to: data.assigned_to ?? null }])
-      setNewTitle('')
-    }
+    await createTask({ list_id: list.id, title: newTitle.trim(), sort_order: open.length, status: 'todo' })
+    setNewTitle('')
   }
 
   async function toggleTask(id: string) {
-    await supabase.rpc('toggle_task_complete', { task_id: id })
-    setTasks(prev => prev.map(t =>
-      t.id === id
-        ? { ...t, completed_at: t.completed_at ? null : new Date().toISOString() }
-        : t
-    ))
+    await repoToggleTask(id)
   }
 
   async function handleDragEnd(event: DragEndEvent) {
@@ -109,28 +111,15 @@ export function TasksView({ list, tasks: initial, members = [], currentUserId }:
 
     const oldIndex = open.findIndex(t => t.id === active.id)
     const newIndex = open.findIndex(t => t.id === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
     const reordered = arrayMove(open, oldIndex, newIndex)
-
-    setTasks(prev => {
-      const doneItems = prev.filter(t => !!t.completed_at)
-      return [...reordered.map((t, i) => ({ ...t, sort_order: i })), ...doneItems]
-    })
-
-    const updates = reordered.map((t, i) => ({ id: t.id, sort_order: i }))
-    await supabase.rpc('reorder_tasks', { p_list_id: list.id, updates })
+    await reorderTasks(reordered.map(t => t.id))
   }
 
   async function createList() {
     if (!listTitle.trim()) return
-    const { data } = await supabase
-      .from('todo_lists')
-      .insert({ title: listTitle.trim(), color: '#6c63ff' })
-      .select('id')
-      .single()
-    if (data) {
-      router.push(`/lists/${data.id}`)
-      router.refresh()
-    }
+    const created = await repoCreateList({ title: listTitle.trim(), color: '#6c63ff' })
+    router.push(`/lists/${created.id}`)
   }
 
   if (!list) {
@@ -268,9 +257,6 @@ export function TasksView({ list, tasks: initial, members = [], currentUserId }:
           listId={list.id}
           members={members}
           onClose={() => setSelected(null)}
-          onUpdate={patch => {
-            setTasks(prev => prev.map(t => t.id === selectedTask.id ? { ...t, ...patch } : t))
-          }}
         />
       )}
     </div>

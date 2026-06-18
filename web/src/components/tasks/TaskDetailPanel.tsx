@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { updateTask, createTask, toggleTask } from '@/lib/offline'
 import type { Database } from '@/lib/database.types'
 import s from './TaskDetailPanel.module.css'
 
@@ -26,12 +27,11 @@ const PRIORITIES = [
 ]
 const PRIORITY_COLOR = ['var(--jd-fg-dim)', '#7b82a8', '#6c63ff', '#f5a623', '#e05c5c']
 
-export function TaskDetailPanel({ task, listId, members = [], onClose, onUpdate }: {
+export function TaskDetailPanel({ task, listId, members = [], onClose }: {
   task: Task
   listId: string
   members?: Member[]
   onClose: () => void
-  onUpdate: (patch: Partial<Task>) => void
 }) {
   const supabase = createClient()
   const [notes, setNotes] = useState(task.notes ?? '')
@@ -57,24 +57,20 @@ export function TaskDetailPanel({ task, listId, members = [], onClose, onUpdate 
 
   async function save(patch: TaskUpdate & { status?: string; assigned_to?: string | null }) {
     setSaving(true)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from('tasks').update(patch).eq('id', task.id)
-    onUpdate(patch as Partial<Task>)
+    await updateTask(task.id, patch)
     setSaving(false)
   }
 
   async function addSubTask() {
     if (!subInput.trim()) return
-    const { data } = await supabase
-      .from('tasks')
-      .insert({ title: subInput.trim(), parent_id: task.id, list_id: listId, sort_order: subTasks.length })
-      .select('id, title, completed_at')
-      .single()
-    if (data) { setSubTasks(prev => [...prev, data]); setSubInput('') }
+    const created = await createTask({ title: subInput.trim(), parent_id: task.id, list_id: listId, sort_order: subTasks.length })
+    setSubTasks(prev => [...prev, { id: created.id, title: created.title, completed_at: null }])
+    setSubInput('')
   }
 
   async function toggleSub(id: string) {
-    await supabase.rpc('toggle_task_complete', { task_id: id })
+    const sub = subTasks.find(s => s.id === id)
+    await toggleTask(id, { completed_at: sub?.completed_at ?? null })
     setSubTasks(prev => prev.map(s =>
       s.id === id ? { ...s, completed_at: s.completed_at ? null : new Date().toISOString() } : s
     ))
