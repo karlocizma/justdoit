@@ -6,6 +6,8 @@ import { marked } from 'marked'
 import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
 import { createClient } from '@/lib/supabase/client'
+import { updateNote, archiveNote, trashNote } from '@/lib/offline'
+import { isOnline } from '@/lib/offline/status'
 import { TemplateModal } from './TemplateModal'
 import type { Template } from './TemplateModal'
 import type { Database } from '@/lib/database.types'
@@ -136,10 +138,11 @@ export function NoteEditor({ note }: { note: Note }) {
 
   const save = useCallback(async (patch: NoteUpdate) => {
     setSaving(true)
-    await supabase.from('notes').update(patch).eq('id', note.id)
+    // Optimistic local write + queued sync (works offline).
+    await updateNote(note.id, patch)
     setSaving(false)
-    // Snapshot at most once every 2 minutes, only when content changed
-    if (patch.content !== undefined) {
+    // Version snapshots are an online-only side effect (resumes on next online edit).
+    if (patch.content !== undefined && isOnline()) {
       const now = Date.now()
       if (now - lastVersionAt.current > 2 * 60 * 1000) {
         lastVersionAt.current = now
@@ -214,12 +217,12 @@ export function NoteEditor({ note }: { note: Note }) {
   }
 
   async function archive() {
-    await supabase.from('notes').update({ is_archived: true }).eq('id', note.id)
+    await archiveNote(note.id)
     router.push('/notes')
   }
 
   async function trash() {
-    await supabase.from('notes').update({ deleted_at: new Date().toISOString() }).eq('id', note.id)
+    await trashNote(note.id)
     router.push('/notes')
   }
 

@@ -1,18 +1,24 @@
 'use client'
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { createClient } from '@/lib/supabase/client'
 import { pullAll } from '@/lib/offline/sync'
-import { isOfflineCacheAvailable } from '@/lib/offline/db'
+import { flush } from '@/lib/offline/outbox'
+import { getDB, isOfflineCacheAvailable } from '@/lib/offline/db'
 
 type SyncState = {
   /** Browser connectivity. */
   online: boolean
-  /** A pull is currently running. */
+  /** A pull/flush cycle is currently running. */
   syncing: boolean
   /** ISO timestamp of the last successful cache refresh, or null. */
   lastSyncedAt: string | null
-  /** Trigger a manual cache refresh. */
+  /** Local mutations still waiting to reach the server. */
+  pendingCount: number
+  /** Whether any queued mutation has exhausted its retries. */
+  hasFailures: boolean
+  /** Trigger a manual sync (pull + flush). */
   syncNow: () => void
 }
 
@@ -25,6 +31,20 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null)
   const runningRef = useRef(false)
 
+  const outbox = useLiveQuery(
+    async () => {
+      if (!isOfflineCacheAvailable()) return { pending: 0, failed: 0 }
+      const db = getDB()
+      const [pending, failed] = await Promise.all([
+        db.outbox.count(),
+        db.outbox.where('status').equals('failed').count(),
+      ])
+      return { pending, failed }
+    },
+    [],
+    { pending: 0, failed: 0 },
+  )
+
   const sync = useCallback(async () => {
     if (!isOfflineCacheAvailable() || runningRef.current) return
     if (typeof navigator !== 'undefined' && !navigator.onLine) return
@@ -32,10 +52,11 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     setSyncing(true)
     try {
       supabaseRef.current ??= createClient()
-      await pullAll(supabaseRef.current)
+      await flush(supabaseRef.current)        // push local changes first
+      await pullAll(supabaseRef.current)       // then refresh from server
       setLastSyncedAt(new Date().toISOString())
     } catch {
-      // Best-effort: the UI still works from server-rendered/cached content.
+      // Best-effort: the UI still works from cached content.
     } finally {
       runningRef.current = false
       setSyncing(false)
@@ -58,7 +79,16 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   }, [sync])
 
   return (
-    <SyncContext.Provider value={{ online, syncing, lastSyncedAt, syncNow: () => void sync() }}>
+    <SyncContext.Provider
+      value={{
+        online,
+        syncing,
+        lastSyncedAt,
+        pendingCount: outbox.pending,
+        hasFailures: outbox.failed > 0,
+        syncNow: () => void sync(),
+      }}
+    >
       {children}
     </SyncContext.Provider>
   )
@@ -71,6 +101,8 @@ export function useSync(): SyncState {
       online: true,
       syncing: false,
       lastSyncedAt: null,
+      pendingCount: 0,
+      hasFailures: false,
       syncNow: () => {},
     }
   )

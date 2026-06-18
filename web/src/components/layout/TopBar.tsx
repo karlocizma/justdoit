@@ -14,8 +14,18 @@ export function TopBar({ user }: { user: User }) {
   const [, startTransition] = useTransition()
   const [query, setQuery] = useState('')
   const { theme, toggleTheme } = useTheme()
-  const { online, syncing } = useSync()
+  const { online, syncing, pendingCount, hasFailures } = useSync()
   const initial = (user.name ?? user.email).slice(0, 2).toUpperCase()
+
+  const syncLabel = !online
+    ? (pendingCount > 0 ? `Offline · ${pendingCount} pending` : 'Offline')
+    : hasFailures
+      ? 'Sync error'
+      : syncing
+        ? 'Syncing…'
+        : pendingCount > 0
+          ? `${pendingCount} pending`
+          : 'Connected'
   const [modKey, setModKey] = useState('Ctrl')
 
   useEffect(() => {
@@ -50,11 +60,14 @@ export function TopBar({ user }: { user: User }) {
         />
       </div>
       <div className={s.right}>
-        <div className={s.sync} title={online ? 'Connected to the server' : 'Offline — changes are viewed from your device'}>
-          <span className={`${s.syncDot} ${online ? s.connected : s.disconnected}`} />
-          <span className={s.syncLabel} suppressHydrationWarning>
-            {online ? (syncing ? 'Syncing…' : 'Connected') : 'Offline'}
-          </span>
+        <div
+          className={s.sync}
+          title={online
+            ? (pendingCount > 0 ? `${pendingCount} change(s) waiting to sync` : 'Connected to the server')
+            : 'Offline — your changes are saved on this device and will sync when you reconnect'}
+        >
+          <span className={`${s.syncDot} ${online && !hasFailures ? s.connected : s.disconnected}`} />
+          <span className={s.syncLabel} suppressHydrationWarning>{syncLabel}</span>
         </div>
         <TourButton />
         <button

@@ -2,12 +2,18 @@ import type { Database } from '@/lib/database.types'
 
 type Tables = Database['public']['Tables']
 
+/** A tag as denormalized onto a cached note for display (editing stays online-only). */
+export type CachedTag = { id: string; name: string; color: string | null }
+
 /**
  * Rows cached locally for offline use. We omit Postgres-generated columns that
  * we never select (e.g. the `content_tsv` tsvector) and add columns that lag the
  * generated types (`tasks.status` / `tasks.assigned_to`, see CLAUDE.md).
  */
-export type CachedNote = Omit<Tables['notes']['Row'], 'content_tsv'>
+export type CachedNote = Omit<Tables['notes']['Row'], 'content_tsv'> & {
+  /** Denormalized from note_tags(tags(...)) during pull, for offline display. */
+  tags?: CachedTag[]
+}
 export type CachedTask = Tables['tasks']['Row'] & {
   status?: string | null
   assigned_to?: string | null

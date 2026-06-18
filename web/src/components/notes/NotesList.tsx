@@ -18,17 +18,27 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { createClient } from '@/lib/supabase/client'
+import { useLiveQuery } from 'dexie-react-hooks'
+import {
+  listNotes, createNote as repoCreateNote, archiveNote, trashNote, reorderNotes, seedCache,
+} from '@/lib/offline'
+import { isOfflineCacheAvailable } from '@/lib/offline/db'
 import s from './NotesList.module.css'
 
 type Tag = { id: string; name: string; color: string | null }
 type NoteTag = { tags: Tag }
-type Note = { id: string; title: string; content: string; color: string | null; is_pinned: boolean; sort_order?: number; updated_at: string; note_tags: NoteTag[] }
+// Server props arrive with the PostgREST `note_tags` embed; the cache stores a
+// flattened `tags[]`. We accept either and normalize to `tags` for display.
+type Note = {
+  id: string; title: string; content: string; color: string | null
+  is_pinned: boolean; sort_order?: number; updated_at: string
+  note_tags?: NoteTag[]; tags?: Tag[]
+}
+
+const noteTags = (n: Note): Tag[] => n.tags ?? n.note_tags?.map(nt => nt.tags).filter(Boolean) ?? []
 
 export function NotesList({ notes: initial, tags = [] }: { notes: Note[]; tags?: Tag[] }) {
   const router = useRouter()
-  const supabase = createClient()
-  const [notes, setNotes] = useState(initial)
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null)
   const importRef = useRef<HTMLInputElement>(null)
   const [selectMode, setSelectMode] = useState(false)
@@ -38,13 +48,21 @@ export function NotesList({ notes: initial, tags = [] }: { notes: Note[]; tags?:
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
 
+  // Seed the cache from server-rendered props (last-write-wins keeps newer local edits).
+  const [seeded, setSeeded] = useState(false)
+  useEffect(() => {
+    if (!isOfflineCacheAvailable()) { setSeeded(true); return }
+    void seedCache('notes', initial as unknown as Record<string, unknown>[]).finally(() => setSeeded(true))
+  }, [initial])
+
+  // Render reactively from the cache so optimistic writes appear instantly. Show
+  // server props until the cache has been seeded to avoid an empty-grid flash.
+  const live = useLiveQuery(() => (isOfflineCacheAvailable() ? listNotes() : undefined), [])
+  const notes: Note[] = seeded ? ((live as Note[] | undefined) ?? initial) : initial
+
   async function createNote() {
-    const { data } = await supabase
-      .from('notes')
-      .insert({ title: 'Untitled', content: '' })
-      .select('id')
-      .single()
-    if (data) router.push(`/notes/${data.id}`)
+    const note = await repoCreateNote()
+    router.push(`/notes/${note.id}`)
   }
 
   async function handleDragEnd(event: DragEndEvent) {
@@ -52,17 +70,12 @@ export function NotesList({ notes: initial, tags = [] }: { notes: Note[]; tags?:
     if (!over || active.id === over.id) return
 
     const restNotes = notes.filter(n => !n.is_pinned)
-    const pinnedNotes = notes.filter(n => n.is_pinned)
-
     const oldIndex = restNotes.findIndex(n => n.id === active.id)
     const newIndex = restNotes.findIndex(n => n.id === over.id)
     if (oldIndex === -1 || newIndex === -1) return
 
     const reordered = arrayMove(restNotes, oldIndex, newIndex)
-    setNotes([...pinnedNotes, ...reordered.map((n, i) => ({ ...n, sort_order: i }))])
-
-    const updates = reordered.map((n, i) => ({ id: n.id, sort_order: i }))
-    await supabase.rpc('reorder_notes', { updates })
+    await reorderNotes(reordered.map(n => n.id))
   }
 
   async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
@@ -85,11 +98,10 @@ export function NotesList({ notes: initial, tags = [] }: { notes: Note[]; tags?:
         if (firstLine.startsWith('# ')) title = firstLine.slice(2).trim()
       }
 
-      await supabase.from('notes').insert({ title, content })
+      await repoCreateNote({ title, content })
     }
 
     if (importRef.current) importRef.current.value = ''
-    router.refresh()
   }
 
   function toggleSelect(id: string) {
@@ -106,21 +118,17 @@ export function NotesList({ notes: initial, tags = [] }: { notes: Note[]; tags?:
   }
 
   async function bulkArchive() {
-    const ids = Array.from(selected)
-    await supabase.from('notes').update({ is_archived: true }).in('id', ids)
-    setNotes(prev => prev.filter(n => !selected.has(n.id)))
+    await Promise.all(Array.from(selected).map(id => archiveNote(id)))
     exitSelectMode()
   }
 
   async function bulkDelete() {
-    const ids = Array.from(selected)
-    await supabase.from('notes').update({ deleted_at: new Date().toISOString() }).in('id', ids)
-    setNotes(prev => prev.filter(n => !selected.has(n.id)))
+    await Promise.all(Array.from(selected).map(id => trashNote(id)))
     exitSelectMode()
   }
 
   const filtered = selectedTagId
-    ? notes.filter(n => n.note_tags?.some(nt => nt.tags?.id === selectedTagId))
+    ? notes.filter(n => noteTags(n).some(t => t?.id === selectedTagId))
     : notes
   const pinned = filtered.filter(n => n.is_pinned)
   const rest = filtered.filter(n => !n.is_pinned)
@@ -255,7 +263,7 @@ function NoteCard({ note, selectMode = false, selected = false, onSelect }: {
 }) {
   const snippet = note.content?.replace(/[#*_`[\]]/g, '').trim().slice(0, 140) ?? ''
   const relTime = formatRelative(note.updated_at)
-  const tags = note.note_tags?.map(nt => nt.tags).filter(Boolean) ?? []
+  const tags = noteTags(note)
 
   const cardContent = (
     <>

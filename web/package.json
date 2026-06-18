@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test:offline": "node scripts/test-offline-merge.ts"
+    "test:offline": "tsx scripts/test-offline-merge.ts && tsx scripts/test-offline-outbox.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -18,6 +18,7 @@
     "@types/qrcode": "^1.5.6",
     "d3": "^7.9.0",
     "dexie": "^4.4.4",
+    "dexie-react-hooks": "^4.4.0",
     "highlight.js": "^11.11.1",
     "marked": "^18.0.4",
     "marked-highlight": "^2.2.4",
@@ -31,6 +32,8 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "fake-indexeddb": "^6.2.5",
+    "tsx": "^4.22.4",
     "typescript": "^5"
   }
 }

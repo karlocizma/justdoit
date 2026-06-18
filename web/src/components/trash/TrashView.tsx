@@ -1,29 +1,25 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { restoreNote, deleteNoteHard } from '@/lib/offline'
 import s from './TrashView.module.css'
 
 type TrashedNote = { id: string; title: string | null; deleted_at: string | null }
 
 export function TrashView({ notes: initial }: { notes: TrashedNote[] }) {
-  const router = useRouter()
-  const supabase = createClient()
   const [notes, setNotes] = useState(initial)
   const [pending, setPending] = useState<Set<string>>(new Set())
 
   async function restore(id: string) {
     setPending(prev => new Set([...prev, id]))
-    await supabase.from('notes').update({ deleted_at: null }).eq('id', id)
+    await restoreNote(id)
     setNotes(prev => prev.filter(n => n.id !== id))
     setPending(prev => { const s = new Set(prev); s.delete(id); return s })
-    router.refresh()
   }
 
   async function hardDelete(id: string) {
     setPending(prev => new Set([...prev, id]))
-    await supabase.from('notes').delete().eq('id', id)
+    await deleteNoteHard(id)
     setNotes(prev => prev.filter(n => n.id !== id))
     setPending(prev => { const s = new Set(prev); s.delete(id); return s })
   }
