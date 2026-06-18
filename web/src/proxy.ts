@@ -23,13 +23,22 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const isAuthRoute = request.nextUrl.pathname.startsWith('/login') ||
-    request.nextUrl.pathname.startsWith('/register') ||
-    request.nextUrl.pathname.startsWith('/forgot-password') ||
-    request.nextUrl.pathname.startsWith('/reset-password') ||
-    request.nextUrl.pathname.startsWith('/auth')
+  const { pathname } = request.nextUrl
 
-  if (!user && !isAuthRoute) {
+  const isAuthRoute = pathname.startsWith('/login') ||
+    pathname.startsWith('/register') ||
+    pathname.startsWith('/forgot-password') ||
+    pathname.startsWith('/reset-password') ||
+    pathname.startsWith('/auth')
+
+  // PWA / offline assets must be reachable without a session: the service worker
+  // and manifest are requested from public pages, and /offline is the cached
+  // fallback shown when the network (and thus auth) is unavailable.
+  const isPublicAsset = pathname === '/sw.js' ||
+    pathname === '/manifest.webmanifest' ||
+    pathname === '/offline'
+
+  if (!user && !isAuthRoute && !isPublicAsset) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

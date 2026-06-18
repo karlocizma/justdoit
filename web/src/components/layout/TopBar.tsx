@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState, useTransition } from 'react'
 import { useTheme } from '@/components/layout/ThemeProvider'
 import { TourButton } from '@/components/onboarding/TourModal'
+import { useSync } from '@/components/offline/SyncProvider'
 import s from './TopBar.module.css'
 
 type User = { email: string; name?: string }
@@ -13,6 +14,7 @@ export function TopBar({ user }: { user: User }) {
   const [, startTransition] = useTransition()
   const [query, setQuery] = useState('')
   const { theme, toggleTheme } = useTheme()
+  const { online, syncing } = useSync()
   const initial = (user.name ?? user.email).slice(0, 2).toUpperCase()
   const [modKey, setModKey] = useState('Ctrl')
 
@@ -48,9 +50,11 @@ export function TopBar({ user }: { user: User }) {
         />
       </div>
       <div className={s.right}>
-        <div className={s.sync}>
-          <span className={`${s.syncDot} ${s.connected}`} />
-          <span className={s.syncLabel}>Connected</span>
+        <div className={s.sync} title={online ? 'Connected to the server' : 'Offline — changes are viewed from your device'}>
+          <span className={`${s.syncDot} ${online ? s.connected : s.disconnected}`} />
+          <span className={s.syncLabel} suppressHydrationWarning>
+            {online ? (syncing ? 'Syncing…' : 'Connected') : 'Offline'}
+          </span>
         </div>
         <TourButton />
         <button

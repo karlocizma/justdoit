@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CommandPalette } from './CommandPalette'
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal'
+import { SyncProvider } from '@/components/offline/SyncProvider'
 
 const INPUT_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT'])
 
@@ -49,10 +50,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [router])
 
   return (
-    <>
+    <SyncProvider>
       {children}
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       {shortcutsOpen && <KeyboardShortcutsModal onClose={() => setShortcutsOpen(false)} />}
-    </>
+    </SyncProvider>
   )
 }
