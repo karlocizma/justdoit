@@ -183,6 +183,23 @@ On INSERT, a trigger auto-creates a `workspace_members` row for the owner with `
 
 ---
 
+### `note_comments`
+
+Discussion threads on workspace notes. Only notes that belong to a workspace can have comments.
+
+| Column | Type | Default | Description |
+|---|---|---|---|
+| `id` | uuid PK | `gen_random_uuid()` | |
+| `note_id` | uuid | | FK → `notes(id)` CASCADE |
+| `user_id` | uuid | `auth.uid()` | FK → `auth.users(id)` CASCADE (comment author) |
+| `content` | text | | 1–4000 chars (check constraint) |
+| `created_at` | timestamptz | `now()` | |
+| `updated_at` | timestamptz | `now()` | Bumped by `set_updated_at()` trigger |
+
+**Index:** `(note_id, created_at)` for ordered thread fetches.
+
+---
+
 ## Row Level Security Summary
 
 | Table | Who can SELECT | Who can INSERT | Who can UPDATE | Who can DELETE |
@@ -196,6 +213,7 @@ On INSERT, a trigger auto-creates a `workspace_members` row for the owner with `
 | `reminders` | Own | Own (with ownership check on note/task) | Own | Own |
 | `workspaces` | Owner + invited members | Owner (new workspace) | Owner | Owner |
 | `workspace_members` | Own row + workspace members | Owner/admin | Self (accept) + owner/admin | Self (leave) + owner/admin |
+| `note_comments` | Member of note's workspace | Member of note's workspace (self as author) | Author only | Author only |
 
 ---
 
@@ -232,6 +250,6 @@ Storage paths:
 
 ## Realtime Publication
 
-The `supabase_realtime` publication includes: `notes` · `tasks` · `todo_lists` · `workspace_members`
+The `supabase_realtime` publication includes: `notes` · `tasks` · `todo_lists` · `workspace_members` · `note_comments`
 
 RLS is enforced on realtime events — users only receive change notifications for rows they can read.

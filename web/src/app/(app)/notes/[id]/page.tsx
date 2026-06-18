@@ -7,12 +7,14 @@ export default async function NotePage({ params }: { params: Promise<{ id: strin
   const supabase = await createClient()
   const { data: note } = await supabase
     .from('notes')
-    .select('id, title, content, color, is_pinned, due_at, updated_at, note_tags(tags(id, name, color))')
+    .select('id, title, content, color, is_pinned, due_at, updated_at, workspace_id, note_tags(tags(id, name, color))')
     .eq('id', id)
     .is('deleted_at', null)
     .single()
 
   if (!note) notFound()
 
-  return <NoteEditor note={note} />
+  const { data: { user } } = await supabase.auth.getUser()
+
+  return <NoteEditor note={note} currentUserId={user?.id ?? null} />
 }

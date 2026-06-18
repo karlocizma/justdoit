@@ -6,11 +6,6 @@ Feature backlog and upcoming work. Items are roughly ordered by priority within 
 
 ## Planned
 
-### Comments on Shared Notes
-Discussion threads on notes inside a workspace. New `note_comments` table (columns: `id`, `note_id`, `user_id`, `content`, `created_at`). Comments shown in a collapsible panel at the bottom of the NoteEditor, visible only to workspace members. Natural follow-on to the activity feed.
-
----
-
 ### Mentions in Workspaces
 `@name` autocomplete in note content and task titles. Triggers a browser push notification and/or in-app badge for the mentioned member. Needs a mentions lookup in the workspace member list and changes to the push notification delivery flow.
 
@@ -19,13 +14,14 @@ Discussion threads on notes inside a workspace. New `note_comments` table (colum
 ## Considering
 
 ### Mobile App
-A React Native app sharing auth and data with the same Supabase backend. The API is already fully in place. Offline mode (above) is a prerequisite for a good mobile experience.
+A React Native app sharing auth and data with the same Supabase backend. The API is already fully in place, and offline mode (see Completed) is done — a key prerequisite for a good mobile experience.
 
 ---
 
 ## Completed
 
 ### Frontend Features
+- [x] **Comments on Shared Notes** — discussion threads on workspace notes. New `note_comments` table (`id`, `note_id`, `user_id`, `content`, `created_at`, `updated_at`) with RLS gated on accepted workspace membership of the note's workspace (reusing `is_workspace_member`); authors can edit/delete their own comments. Collapsible Comments panel at the bottom of the NoteEditor, shown only for workspace notes, with a composer (⌘/Ctrl+Enter to post) and inline edit/delete. Live updates via a Supabase Realtime `postgres_changes` subscription on `note_comments` (the first client-side `.channel()` usage). Online-only; degrades to a notice when offline. Covered by integration tests in `scripts/test-milestone8.ts`
 - [x] **Offline Mode** — local-first data layer for notes, tasks and lists. IndexedDB cache via Dexie (`src/lib/offline/`); service worker caches the app shell (network-first navigations with `/offline` fallback, stale-while-revalidate assets) so the app loads offline. Optimistic writes go through a repository that updates the cache and queues an outbox op; a FIFO flush worker (retry/backoff, stops on first failure to preserve order) replays them when online. Last-write-wins conflict resolution on `updated_at`; recurring-task completion ported client-side to match the server RPC. Sync-status menu in the TopBar (Connected / Syncing / N pending / Offline / error) with manual "Sync now" and "Retry failed"; cache cleared on sign-out. Tag editing, AI, attachments, search, workspaces and export remain online-only. Pure logic covered by unit tests (`npm run test:offline`)
 - [x] **Progressive Web App (PWA)** — installable on desktop and mobile via `app/manifest.ts` (name, icons, standalone display, brand `theme_color`); generated icon set (192/512/maskable/apple-touch/notification badge) in `public/`; service worker registered app-wide via `ServiceWorkerRegister` with a minimal `fetch` handler so the app qualifies as installable (offline caching to be layered on for Offline Mode)
 - [x] **Kanban board view** — toggle between list and board view in any task list; drag cards between To Do / In Progress / Done columns via `@dnd-kit`; status synced to DB; assignee avatar and priority badge on cards

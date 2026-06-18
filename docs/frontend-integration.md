@@ -109,6 +109,8 @@ await supabase.auth.updateUser({ password: 'new-password' })
 
 ## Notes
 
+> **Offline-first note:** the examples below show the raw supabase-js calls for the notes/tasks/lists API. The `web/` frontend is local-first and does **not** call these directly for mutations — it routes them through the offline repository (`web/src/lib/offline/`), which writes to an IndexedDB cache and queues an outbox that syncs to Supabase. The supabase-js calls here remain the source of truth for any other client (mobile, scripts, etc.). See `CLAUDE.md` → "Offline-first data layer".
+
 ### Fetch notes
 
 ```ts
@@ -412,6 +414,45 @@ await supabase
   .from('notes')
   .insert({ title: 'Shared Note', workspace_id: workspaceId })
 ```
+
+---
+
+## Comments on Notes
+
+Comments are only allowed on notes that belong to a workspace; RLS gates read/write on accepted membership of that workspace. Authors can edit or delete their own comments. (The `web/` frontend wires this up in `components/notes/CommentsPanel.tsx`.)
+
+### Fetch a note's comments
+
+```ts
+const { data: comments } = await supabase
+  .from('note_comments')
+  .select('id, note_id, user_id, content, created_at, updated_at')
+  .eq('note_id', noteId)
+  .order('created_at', { ascending: true })
+```
+
+Author display names come from a separate `profiles` lookup (co-members can read each other's `profiles` rows) — there is no direct FK from `note_comments.user_id` to `profiles`:
+
+```ts
+const ids = [...new Set(comments.map(c => c.user_id))]
+const { data: authors } = await supabase
+  .from('profiles').select('id, display_name').in('id', ids)
+```
+
+### Post / edit / delete a comment
+
+```ts
+// post — user_id defaults to auth.uid()
+await supabase.from('note_comments').insert({ note_id: noteId, content })
+// edit (author only)
+await supabase.from('note_comments').update({ content }).eq('id', commentId)
+// delete (author only)
+await supabase.from('note_comments').delete().eq('id', commentId)
+```
+
+### Live updates
+
+`note_comments` is in the realtime publication; subscribe to keep a thread live (see [Realtime Subscriptions](#realtime-subscriptions) for the channel pattern, filtering on `note_id=eq.<noteId>`).
 
 ---
 

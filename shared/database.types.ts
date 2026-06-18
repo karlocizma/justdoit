@@ -34,6 +34,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      note_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          note_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          note_id: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          note_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_comments_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       note_tags: {
         Row: {
           note_id: string
@@ -60,6 +95,41 @@ export type Database = {
             columns: ["tag_id"]
             isOneToOne: false
             referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      note_versions: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          note_id: string
+          title: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          note_id: string
+          title?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          note_id?: string
+          title?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_versions_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
             referencedColumns: ["id"]
           },
         ]
@@ -150,6 +220,33 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       reminders: {
         Row: {
           channel: string
@@ -224,6 +321,7 @@ export type Database = {
       }
       tasks: {
         Row: {
+          assigned_to: string | null
           completed_at: string | null
           created_at: string
           due_date: string | null
@@ -236,10 +334,12 @@ export type Database = {
           priority: number
           recurrence: Json | null
           sort_order: number
+          status: string
           title: string
           updated_at: string
         }
         Insert: {
+          assigned_to?: string | null
           completed_at?: string | null
           created_at?: string
           due_date?: string | null
@@ -252,10 +352,12 @@ export type Database = {
           priority?: number
           recurrence?: Json | null
           sort_order?: number
+          status?: string
           title: string
           updated_at?: string
         }
         Update: {
+          assigned_to?: string | null
           completed_at?: string | null
           created_at?: string
           due_date?: string | null
@@ -268,6 +370,7 @@ export type Database = {
           priority?: number
           recurrence?: Json | null
           sort_order?: number
+          status?: string
           title?: string
           updated_at?: string
         }
@@ -411,6 +514,7 @@ export type Database = {
           content_tsv: unknown
           created_at: string
           deleted_at: string | null
+          due_at: string | null
           id: string
           is_archived: boolean
           is_pinned: boolean
@@ -435,6 +539,7 @@ export type Database = {
           content_tsv: unknown
           created_at: string
           deleted_at: string | null
+          due_at: string | null
           id: string
           is_archived: boolean
           is_pinned: boolean
@@ -468,6 +573,7 @@ export type Database = {
           content_tsv: unknown
           created_at: string
           deleted_at: string | null
+          due_at: string | null
           id: string
           is_archived: boolean
           is_pinned: boolean
@@ -499,6 +605,7 @@ export type Database = {
       toggle_task_complete: {
         Args: { task_id: string }
         Returns: {
+          assigned_to: string | null
           completed_at: string | null
           created_at: string
           due_date: string | null
@@ -511,6 +618,7 @@ export type Database = {
           priority: number
           recurrence: Json | null
           sort_order: number
+          status: string
           title: string
           updated_at: string
         }

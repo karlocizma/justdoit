@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 import { updateNote, archiveNote, trashNote } from '@/lib/offline'
 import { isOnline } from '@/lib/offline/status'
 import { TemplateModal } from './TemplateModal'
+import { CommentsPanel } from './CommentsPanel'
 import type { Template } from './TemplateModal'
 import type { Database } from '@/lib/database.types'
 import { summarizeNote, suggestTags, generateTasks } from '@/lib/ai'
@@ -18,7 +19,7 @@ import 'highlight.js/styles/github-dark.css'
 type NoteUpdate = Database['public']['Tables']['notes']['Update']
 type Tag = { id: string; name: string; color: string | null }
 type NoteTag = { tags: Tag }
-type Note = { id: string; title: string; content: string; color: string | null; is_pinned: boolean; due_at?: string | null; updated_at: string; note_tags: NoteTag[] }
+type Note = { id: string; title: string; content: string; color: string | null; is_pinned: boolean; due_at?: string | null; updated_at: string; workspace_id?: string | null; note_tags: NoteTag[] }
 
 const COLORS = ['#8b7cff', '#5b9bff', '#48d1cc', '#4caf89', '#f5a623', '#e05c8b', '#e05c5c', null]
 
@@ -30,7 +31,7 @@ marked.use(markedHighlight({
   },
 }))
 
-export function NoteEditor({ note }: { note: Note }) {
+export function NoteEditor({ note, currentUserId = null }: { note: Note; currentUserId?: string | null }) {
   const router = useRouter()
   const supabase = createClient()
   const [title, setTitle] = useState(note.title ?? '')
@@ -888,6 +889,10 @@ export function NoteEditor({ note }: { note: Note }) {
           </div>
         )}
       </div>
+
+      {note.workspace_id && (
+        <CommentsPanel noteId={note.id} currentUserId={currentUserId} />
+      )}
 
       {showTemplates && (
         <TemplateModal

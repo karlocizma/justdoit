@@ -10,6 +10,8 @@
  *  - RLS: workspace members can read/write shared notes and lists
  *  - RLS: non-members and pending invitees cannot see workspace content
  *  - Profiles: co-members can read each other's display names
+ *  - Comments on shared notes: workspace-member read/insert, author-only edit/delete,
+ *    non-members blocked, comments rejected on personal (non-workspace) notes
  *
  * Run:  npx tsx scripts/test-milestone8.ts
  */
@@ -79,6 +81,7 @@ async function main() {
   ok("tasks in supabase_realtime publication",          tables.includes("tasks"))
   ok("todo_lists in supabase_realtime publication",     tables.includes("todo_lists"))
   ok("workspace_members in supabase_realtime publication", tables.includes("workspace_members"))
+  ok("note_comments in supabase_realtime publication",  tables.includes("note_comments"))
 
 
   // ── 2. Workspace CRUD ─────────────────────────────────────────────────────
@@ -360,6 +363,80 @@ async function main() {
     .select("user_id, role")
     .eq("workspace_id", ws1!.id)
   ok("Alice sees both members of workspace",    members?.length === 2)
+
+
+  // ── 6.5 Comments on shared notes ──────────────────────────────────────────
+  section("Comments on shared notes")
+
+  // Alice comments on the shared workspace note (ws1Note; Bob is an accepted member)
+  const { data: aliceComment, error: aliceCommentErr } = await alice
+    .from("note_comments")
+    .insert({ note_id: ws1Note!.id, content: "First comment from Alice" })
+    .select().single()
+  ok("Alice can comment on shared note",        !aliceCommentErr && !!aliceComment)
+  ok("Comment user_id defaults to author",      aliceComment?.user_id === aliceId)
+
+  // Bob (co-member) can read Alice's comment
+  const { data: bobSeesComments } = await bob
+    .from("note_comments").select("id, content").eq("note_id", ws1Note!.id)
+  ok("Co-member can read comments on shared note", bobSeesComments?.some(c => c.id === aliceComment!.id))
+
+  // Bob can add his own comment
+  const { data: bobComment, error: bobCommentErr } = await bob
+    .from("note_comments")
+    .insert({ note_id: ws1Note!.id, content: "Reply from Bob" })
+    .select().single()
+  ok("Co-member can comment on shared note",    !bobCommentErr && !!bobComment)
+
+  // Alice can read Bob's comment
+  const { data: aliceSeesBobComment } = await alice
+    .from("note_comments").select("id").eq("id", bobComment!.id)
+  ok("Author can read co-member's comment",     aliceSeesBobComment?.length === 1)
+
+  // Author can edit own comment
+  const { error: editErr } = await alice
+    .from("note_comments").update({ content: "Edited by Alice" }).eq("id", aliceComment!.id)
+  ok("Author can edit own comment",             !editErr)
+  const { data: editedComment } = await alice
+    .from("note_comments").select("content").eq("id", aliceComment!.id).single()
+  ok("Comment content updated",                 editedComment?.content === "Edited by Alice")
+
+  // Non-author cannot edit another member's comment (RLS filters → 0 rows changed)
+  await bob.from("note_comments").update({ content: "Bob tampering" }).eq("id", aliceComment!.id)
+  const { data: afterTamper } = await alice
+    .from("note_comments").select("content").eq("id", aliceComment!.id).single()
+  ok("Non-author cannot edit others' comment",  afterTamper?.content === "Edited by Alice")
+
+  // Non-author cannot delete another member's comment
+  await bob.from("note_comments").delete().eq("id", aliceComment!.id)
+  const { data: stillThere } = await alice
+    .from("note_comments").select("id").eq("id", aliceComment!.id)
+  ok("Non-author cannot delete others' comment", stillThere?.length === 1)
+
+  // Author can delete own comment
+  const { error: delErr } = await bob.from("note_comments").delete().eq("id", bobComment!.id)
+  ok("Author can delete own comment",           !delErr)
+  const { data: bobCommentGone } = await alice
+    .from("note_comments").select("id").eq("id", bobComment!.id)
+  ok("Deleted comment removed",                 !bobCommentGone?.length)
+
+  // Non-member cannot read comments on a note in a workspace they're not in (ws2Note is Alice-only)
+  const { data: bobReadsWs2Comments } = await bob
+    .from("note_comments").select("id").eq("note_id", ws2Note!.id)
+  ok("Non-member sees no comments on non-joined workspace note", !bobReadsWs2Comments?.length)
+
+  // Non-member cannot comment on a note in a workspace they're not in
+  const { error: bobCommentHackErr } = await bob
+    .from("note_comments").insert({ note_id: ws2Note!.id, content: "intrusion" })
+  ok("Non-member cannot comment on non-joined workspace note", !!bobCommentHackErr)
+
+  // Comments are rejected on personal (non-workspace) notes
+  const { data: personalNote } = await alice
+    .from("notes").insert({ title: "Alice personal", content: "private" }).select().single()
+  if (personalNote) createdNoteIds.push(personalNote.id)
+  const { error: personalCommentErr } = await alice
+    .from("note_comments").insert({ note_id: personalNote!.id, content: "self note" })
+  ok("Comments rejected on personal (non-workspace) note", !!personalCommentErr)
 
 
   // ── 7. Workspace delete ───────────────────────────────────────────────────
