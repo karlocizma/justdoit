@@ -2,7 +2,7 @@
 
 **Notes & Tasks, done right.**
 
-A full-stack productivity app — Markdown notes with tags, to-do lists with sub-tasks, kanban board view, task assignment, note version history, reminders, recurring tasks, file attachments, shared workspaces, real-time sync, calendar view, browser push notifications, AI-powered note summarization, tag suggestions, task extraction, smart search, and more.
+A full-stack productivity app — Markdown notes with tags, to-do lists with sub-tasks, kanban board view, task assignment, note version history, reminders, recurring tasks, file attachments, shared workspaces, real-time sync, calendar view, browser push notifications, AI-powered note summarization, tag suggestions, task extraction, smart search, an installable PWA, offline support for notes/tasks/lists, and more.
 
 This is a **monorepo** containing the complete application:
 
@@ -159,9 +159,13 @@ justdoit/
 ├── web/                             # Next.js 16 frontend
 │   ├── src/app/                     # App Router pages
 │   │   ├── (app)/                   # Authenticated routes
-│   │   └── (auth)/                  # Login / register
+│   │   ├── (auth)/                  # Login / register
+│   │   ├── manifest.ts              # PWA web app manifest
+│   │   └── offline/                 # Offline fallback page
 │   ├── src/components/              # React components
 │   ├── src/lib/supabase/            # Browser + server Supabase clients
+│   ├── src/lib/offline/             # Offline-first data layer (Dexie cache, outbox, sync)
+│   ├── public/sw.js                 # Service worker (push + offline app-shell cache)
 │   └── src/styles/tokens.css        # Design tokens (--jd-* CSS variables)
 ├── supabase/
 │   ├── config.toml

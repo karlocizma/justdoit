@@ -97,6 +97,12 @@ Next.js 16 with React 19. **This version has breaking changes from prior Next.js
 - Dark theme is canonical; `[data-theme="light"]` overrides are in `tokens.css`
 - No CSS framework — use tokens directly in CSS Modules
 
+**Offline-first data layer (`src/lib/offline/`):**
+- Notes, tasks and todo_lists are local-first. **Do not call `supabase.from('notes'|'tasks'|'todo_lists')` directly for mutations** — route them through the repository (`createNote`, `updateNote`, `toggleTask`, `reorderTasks`, etc. from `@/lib/offline`). Each write updates the Dexie cache optimistically and enqueues an outbox op that the flush worker replays to Supabase when online.
+- Read these entities reactively from the cache with `useLiveQuery` over the repository readers (`listNotes`, `listTopLevelTasks`, …), seeded from server-component props via `seedCache`. Conflict resolution is last-write-wins on `updated_at` (DB triggers set `updated_at`, so never send it in payloads).
+- Online-only surfaces (tags, AI, attachments, search, workspaces, export, note_versions) still use supabase-js directly and degrade gracefully offline.
+- The service worker (`public/sw.js`) caches the app shell; the PWA manifest is `src/app/manifest.ts`. Pure offline logic is unit-tested via `cd web && npm run test:offline`.
+
 ## Local Dev Credentials
 
 After `npm run db:reset`:

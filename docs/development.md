@@ -114,6 +114,12 @@ npx tsx scripts/test-notes.ts
 
 Tests print `✓` / `✗` and exit non-zero on failure. No test framework — plain TypeScript scripts.
 
+Frontend offline data-layer tests (no Supabase needed — pure logic + in-memory IndexedDB):
+
+```bash
+cd web && npm run test:offline   # LWW merge, outbox flush ordering/retry, recurrence math
+```
+
 Frontend type check:
 
 ```bash
