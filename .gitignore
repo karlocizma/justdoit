@@ -13,3 +13,9 @@ dist/
 
 # Claude Code
 .claude/
+
+# ruflo / claude-flow tooling
+.claude-flow/
+.swarm/
+.mcp.json
+ruvector.db
