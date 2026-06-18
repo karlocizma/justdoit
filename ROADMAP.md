@@ -22,11 +22,6 @@ Allow the app to work without an internet connection and sync automatically when
 
 ## Planned
 
-### Progressive Web App (PWA)
-Installable from the browser on desktop and mobile. Pairs directly with offline mode — the service worker needed for offline caching also enables PWA install prompts. Requires a Web App Manifest and icon set.
-
----
-
 ### Comments on Shared Notes
 Discussion threads on notes inside a workspace. New `note_comments` table (columns: `id`, `note_id`, `user_id`, `content`, `created_at`). Comments shown in a collapsible panel at the bottom of the NoteEditor, visible only to workspace members. Natural follow-on to the activity feed.
 
@@ -34,11 +29,6 @@ Discussion threads on notes inside a workspace. New `note_comments` table (colum
 
 ### Mentions in Workspaces
 `@name` autocomplete in note content and task titles. Triggers a browser push notification and/or in-app badge for the mentioned member. Needs a mentions lookup in the workspace member list and changes to the push notification delivery flow.
-
----
-
-### Two-Factor Authentication (2FA)
-TOTP-based 2FA (Google Authenticator, 1Password, etc.). Supabase Auth already supports `enrollMFA` / `challengeMFA` — this is purely a Settings UI to enroll, verify, and unenroll. No backend changes needed beyond enabling the feature in the Supabase dashboard.
 
 ---
 
@@ -52,6 +42,7 @@ A React Native app sharing auth and data with the same Supabase backend. The API
 ## Completed
 
 ### Frontend Features
+- [x] **Progressive Web App (PWA)** — installable on desktop and mobile via `app/manifest.ts` (name, icons, standalone display, brand `theme_color`); generated icon set (192/512/maskable/apple-touch/notification badge) in `public/`; service worker registered app-wide via `ServiceWorkerRegister` with a minimal `fetch` handler so the app qualifies as installable (offline caching to be layered on for Offline Mode)
 - [x] **Kanban board view** — toggle between list and board view in any task list; drag cards between To Do / In Progress / Done columns via `@dnd-kit`; status synced to DB; assignee avatar and priority badge on cards
 - [x] **Note version history** — throttled snapshots saved to `note_versions` table; History panel in the note editor with version list, diff preview, and one-click restore
 - [x] **Task assignment in workspaces** — `assigned_to` column on `tasks`; workspace member picker in the task detail panel; "Assigned to me" filter toggle in the task list header; status picker (To Do / In Progress / Done) in task detail

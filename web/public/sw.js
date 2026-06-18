@@ -1,7 +1,11 @@
-// JustDoIt Service Worker — handles push notifications
+// JustDoIt Service Worker — handles push notifications + PWA installability
 
 self.addEventListener('install', () => self.skipWaiting())
 self.addEventListener('activate', e => e.waitUntil(self.clients.claim()))
+
+// Minimal pass-through fetch handler. Its presence makes the app installable as
+// a PWA; offline caching strategies will be layered on here (see ROADMAP: Offline Mode).
+self.addEventListener('fetch', () => {})
 
 self.addEventListener('push', e => {
   if (!e.data) return
