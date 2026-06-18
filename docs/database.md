@@ -201,6 +201,26 @@ Discussion threads on workspace notes. Only notes that belong to a workspace can
 
 ---
 
+### `mentions`
+
+`@`-mentions of workspace members in a note/task. One row per `(source_id, mentioned_user)` — re-editing the source never re-notifies. Powers the notifications bell.
+
+| Column | Type | Default | Description |
+|---|---|---|---|
+| `id` | uuid PK | `gen_random_uuid()` | |
+| `workspace_id` | uuid | | FK → `workspaces(id)` CASCADE |
+| `mentioned_user` | uuid | | FK → `auth.users(id)` CASCADE (recipient) |
+| `mentioned_by` | uuid | `auth.uid()` | FK → `auth.users(id)` CASCADE (author) |
+| `source_type` | text | | `'note'` \| `'task'` (check) |
+| `source_id` | uuid | | The note/task the mention is in |
+| `context` | text? | | Snippet/title for display |
+| `is_read` | boolean | `false` | |
+| `created_at` | timestamptz | `now()` | |
+
+**Unique:** `(source_id, mentioned_user)`. **Index:** `(mentioned_user, is_read, created_at desc)`.
+
+---
+
 ## Row Level Security Summary
 
 | Table | Who can SELECT | Who can INSERT | Who can UPDATE | Who can DELETE |
@@ -215,6 +235,7 @@ Discussion threads on workspace notes. Only notes that belong to a workspace can
 | `workspaces` | Owner + invited members | Owner (new workspace) | Owner | Owner |
 | `workspace_members` | Own row + workspace members | Owner/admin | Self (accept) + owner/admin | Self (leave) + owner/admin |
 | `note_comments` | Member of note's workspace | Member of note's workspace (self as author) | Author only | Author only |
+| `mentions` | Recipient or author | Workspace member (self as author) | Recipient only | Recipient only |
 
 ---
 
@@ -252,6 +273,6 @@ Storage paths:
 
 ## Realtime Publication
 
-The `supabase_realtime` publication includes: `notes` · `tasks` · `todo_lists` · `workspace_members` · `note_comments`
+The `supabase_realtime` publication includes: `notes` · `tasks` · `todo_lists` · `workspace_members` · `note_comments` · `mentions`
 
 RLS is enforced on realtime events — users only receive change notifications for rows they can read.

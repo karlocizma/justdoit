@@ -6,11 +6,12 @@ import { useTheme } from '@/components/layout/ThemeProvider'
 import { TourButton } from '@/components/onboarding/TourModal'
 import { useSync } from '@/components/offline/SyncProvider'
 import { SyncStatusMenu } from '@/components/offline/SyncStatusMenu'
+import { NotificationsBell } from '@/components/layout/NotificationsBell'
 import s from './TopBar.module.css'
 
 type User = { email: string; name?: string }
 
-export function TopBar({ user }: { user: User }) {
+export function TopBar({ user, userId }: { user: User; userId: string }) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   const [query, setQuery] = useState('')
@@ -78,6 +79,7 @@ export function TopBar({ user }: { user: User }) {
           </button>
           {syncMenuOpen && <SyncStatusMenu onClose={() => setSyncMenuOpen(false)} />}
         </div>
+        <NotificationsBell userId={userId} />
         <TourButton />
         <button
           className={s.themeBtn}

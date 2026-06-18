@@ -17,6 +17,7 @@
     "test:functions":  "tsx scripts/test-functions.ts",
     "test:calendar":   "tsx scripts/test-calendar.ts",
     "test:admin":      "tsx scripts/test-admin.ts",
+    "test:mentions":   "tsx scripts/test-mentions.ts",
     "test:reminders":  "tsx scripts/test-reminders.ts",
     "test:milestone7": "tsx scripts/test-milestone7.ts",
     "test:milestone8": "tsx scripts/test-milestone8.ts",

@@ -13,6 +13,7 @@ import { CommentsPanel } from './CommentsPanel'
 import type { Template } from './TemplateModal'
 import type { Database } from '@/lib/database.types'
 import { summarizeNote, suggestTags, generateTasks } from '@/lib/ai'
+import { syncMentions, type WorkspaceMember } from '@/lib/mentions'
 import s from './NoteEditor.module.css'
 import 'highlight.js/styles/github-dark.css'
 
@@ -74,6 +75,13 @@ export function NoteEditor({ note, currentUserId = null }: { note: Note; current
   const [linkNotes, setLinkNotes] = useState<{ id: string; title: string }[]>([])
   const [linkIndex, setLinkIndex] = useState(0)
   const [allNotes, setAllNotes] = useState<{ id: string; title: string }[]>([])
+  // @-mentions state (workspace notes only)
+  const [wsMembers, setWsMembers] = useState<WorkspaceMember[]>([])
+  const wsMembersRef = useRef<WorkspaceMember[]>([])
+  wsMembersRef.current = wsMembers
+  const [mentionSearch, setMentionSearch] = useState<string | null>(null)
+  const [mentionMatches, setMentionMatches] = useState<WorkspaceMember[]>([])
+  const [mentionIndex, setMentionIndex] = useState(0)
   // Version history
   const [showHistory, setShowHistory] = useState(false)
   const [versions, setVersions] = useState<{ id: string; title: string | null; content: string; created_at: string }[]>([])
@@ -106,6 +114,21 @@ export function NoteEditor({ note, currentUserId = null }: { note: Note; current
         setUserTemplates(templates)
       })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load workspace members for @-mention autocomplete (workspace notes only).
+  useEffect(() => {
+    if (!note.workspace_id) return
+    supabase
+      .from('workspace_members')
+      .select('user_id, accepted_at, profiles(id, display_name)')
+      .eq('workspace_id', note.workspace_id)
+      .then(({ data }) => {
+        const members = (data ?? [])
+          .filter((m: any) => m.accepted_at && m.profiles)
+          .map((m: any) => ({ id: m.profiles.id as string, display_name: m.profiles.display_name as string | null }))
+        setWsMembers(members)
+      })
+  }, [note.workspace_id, supabase])
 
   // Load backlinks — notes whose content contains [[CurrentTitle]]
   useEffect(() => {
@@ -154,8 +177,20 @@ export function NoteEditor({ note, currentUserId = null }: { note: Note; current
           content: patch.content as string,
         }).then(() => {})
       }
+      // @-mentions are an online-only side effect on workspace notes.
+      if (note.workspace_id && currentUserId && wsMembersRef.current.length > 0) {
+        void syncMentions({
+          workspaceId: note.workspace_id,
+          sourceType: 'note',
+          sourceId: note.id,
+          context: (patch.title as string) ?? note.title,
+          text: patch.content as string,
+          members: wsMembersRef.current,
+          authorId: currentUserId,
+        })
+      }
     }
-  }, [supabase, note.id, note.title])
+  }, [supabase, note.id, note.title, note.workspace_id, currentUserId])
 
   function scheduleSave(patch: NoteUpdate) {
     if (saveTimer.current) clearTimeout(saveTimer.current)
@@ -403,6 +438,37 @@ export function NoteEditor({ note, currentUserId = null }: { note: Note; current
     } else {
       setLinkSearch(null)
     }
+  }
+
+  function detectMentionTrigger(value: string, cursorPos: number) {
+    if (!note.workspace_id) return
+    const match = value.slice(0, cursorPos).match(/@([^\s@]*)$/)
+    if (match) {
+      const query = match[1].toLowerCase()
+      setMentionSearch(query)
+      setMentionMatches(
+        wsMembers
+          .filter(m => m.id !== currentUserId && m.display_name && m.display_name.toLowerCase().includes(query))
+          .slice(0, 8),
+      )
+      setMentionIndex(0)
+    } else {
+      setMentionSearch(null)
+    }
+  }
+
+  function insertMention(m: WorkspaceMember) {
+    const ta = textareaRef.current
+    if (!ta || !m.display_name) return
+    const before = content.slice(0, ta.selectionStart)
+    const after = content.slice(ta.selectionStart)
+    const replaced = before.replace(/@([^\s@]*)$/, `@${m.display_name} `)
+    const newContent = replaced + after
+    setContent(newContent)
+    scheduleSave({ content: newContent })
+    setMentionSearch(null)
+    const newPos = replaced.length
+    requestAnimationFrame(() => { ta.focus(); ta.setSelectionRange(newPos, newPos) })
   }
 
   useEffect(() => {
@@ -760,8 +826,16 @@ export function NoteEditor({ note, currentUserId = null }: { note: Note; current
               setContent(val)
               scheduleSave({ content: val })
               detectLinkTrigger(val, e.target.selectionStart)
+              detectMentionTrigger(val, e.target.selectionStart)
             }}
             onKeyDown={e => {
+              if (mentionSearch !== null && mentionMatches.length > 0) {
+                if (e.key === 'ArrowDown') { e.preventDefault(); setMentionIndex(i => Math.min(i + 1, mentionMatches.length - 1)) }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); setMentionIndex(i => Math.max(i - 1, 0)) }
+                else if (e.key === 'Enter') { e.preventDefault(); insertMention(mentionMatches[mentionIndex]) }
+                else if (e.key === 'Escape') { setMentionSearch(null) }
+                return
+              }
               if (linkSearch === null) return
               if (e.key === 'ArrowDown') { e.preventDefault(); setLinkIndex(i => Math.min(i + 1, linkNotes.length - 1)) }
               else if (e.key === 'ArrowUp') { e.preventDefault(); setLinkIndex(i => Math.max(i - 1, 0)) }
@@ -778,6 +852,19 @@ export function NoteEditor({ note, currentUserId = null }: { note: Note; current
                   onMouseDown={() => insertNoteLink(n)}
                 >
                   <LinkIcon /> {n.title || 'Untitled'}
+                </button>
+              ))}
+            </div>
+          )}
+          {mentionSearch !== null && mentionMatches.length > 0 && (
+            <div className={s.linkDropdown}>
+              {mentionMatches.map((m, i) => (
+                <button
+                  key={m.id}
+                  className={`${s.linkItem} ${i === mentionIndex ? s.linkItemActive : ''}`}
+                  onMouseDown={() => insertMention(m)}
+                >
+                  @ {m.display_name}
                 </button>
               ))}
             </div>

@@ -34,6 +34,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      mentions: {
+        Row: {
+          context: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          mentioned_by: string
+          mentioned_user: string
+          source_id: string
+          source_type: string
+          workspace_id: string
+        }
+        Insert: {
+          context?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          mentioned_by?: string
+          mentioned_user: string
+          source_id: string
+          source_type: string
+          workspace_id: string
+        }
+        Update: {
+          context?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          mentioned_by?: string
+          mentioned_user?: string
+          source_id?: string
+          source_type?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       note_comments: {
         Row: {
           content: string

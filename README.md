@@ -2,7 +2,7 @@
 
 **Notes & Tasks, done right.**
 
-A full-stack productivity app — Markdown notes with tags, to-do lists with sub-tasks, kanban board view, task assignment, note version history, reminders, recurring tasks, file attachments, shared workspaces, comments on shared notes, real-time sync, calendar view, browser push notifications, AI-powered note summarization, tag suggestions, task extraction, smart search, an installable PWA, a native desktop app, offline support for notes/tasks/lists, an ICS calendar feed, and more.
+A full-stack productivity app — Markdown notes with tags, to-do lists with sub-tasks, kanban board view, task assignment, note version history, reminders, recurring tasks, file attachments, shared workspaces, comments on shared notes, @-mentions, real-time sync, calendar view, browser push notifications, AI-powered note summarization, tag suggestions, task extraction, smart search, an installable PWA, a native desktop app, offline support for notes/tasks/lists, an ICS calendar feed, and more.
 
 This is a **monorepo** containing the complete application:
 
@@ -210,11 +210,11 @@ justdoit/
 
 See [`docs/database.md`](docs/database.md) for the full schema with column descriptions.
 
-**Tables:** `profiles` · `notes` · `note_tags` · `note_versions` · `note_comments` · `tags` · `todo_lists` · `tasks` · `reminders` · `workspaces` · `workspace_members` · `push_subscriptions`
+**Tables:** `profiles` · `notes` · `note_tags` · `note_versions` · `note_comments` · `mentions` · `tags` · `todo_lists` · `tasks` · `reminders` · `workspaces` · `workspace_members` · `push_subscriptions`
 
 **Storage buckets:** `note-attachments` (5 MB/file) · `exports` (100 MB/file)
 
-**Realtime publication:** `notes` · `tasks` · `todo_lists` · `workspace_members` · `note_comments`
+**Realtime publication:** `notes` · `tasks` · `todo_lists` · `workspace_members` · `note_comments` · `mentions`
 
 ---
 

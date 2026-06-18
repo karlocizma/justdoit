@@ -1,0 +1,117 @@
+.wrap {
+  position: relative;
+}
+
+.bell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--jd-fg-dim);
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+}
+.bell:hover { background: var(--jd-surface); color: var(--jd-fg); }
+
+.badge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--jd-danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
+  max-height: 420px;
+  overflow-y: auto;
+  background: var(--jd-surface);
+  border: 1px solid var(--jd-border);
+  border-radius: var(--jd-radius-lg);
+  box-shadow: var(--jd-shadow-lg);
+  z-index: 50;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--jd-border-soft);
+}
+
+.title {
+  font-size: var(--jd-fs-body);
+  font-weight: var(--jd-fw-semibold);
+  color: var(--jd-fg);
+}
+
+.markAll {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--jd-fs-small);
+  color: var(--jd-accent);
+}
+.markAll:hover { text-decoration: underline; }
+
+.empty {
+  padding: 24px 14px;
+  text-align: center;
+  font-size: var(--jd-fs-small);
+  color: var(--jd-fg-dim);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  text-align: left;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--jd-border-soft);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms;
+}
+.item:hover { background: var(--jd-surface-2); }
+
+.unread {
+  background: var(--jd-accent-soft);
+}
+.unread:hover { background: var(--jd-accent-soft); }
+
+.itemText {
+  font-size: var(--jd-fs-small);
+  color: var(--jd-fg);
+}
+
+.itemTime {
+  font-size: var(--jd-fs-tiny);
+  color: var(--jd-fg-faint);
+}

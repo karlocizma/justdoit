@@ -69,7 +69,7 @@ The API is entirely Supabase — no custom HTTP server:
 - **PostgREST** (`/rest/v1/*`) — auto-generated CRUD for all tables, gated by Row Level Security
 - **Auth** (`/auth/v1`) — email/password + GitHub/Google OAuth via GoTrue
 - **Edge Functions** (Deno, `supabase/functions/`) — custom logic: `dashboard`, `search`, `export`, `reminder-webhook`, `reminder-cancel`, `workspace-invite`, `ai`, `calendar-feed` (public ICS feed, `verify_jwt = false`, auth by per-user token in `profiles.settings.calendar_feed_token`), `admin-stats` (app-operator metrics, gated on the global `profiles.is_admin` flag, aggregates with the service-role key); each shares `_shared/cors.ts`
-- **Realtime** — tables `notes`, `tasks`, `todo_lists`, `workspace_members` published via WebSocket
+- **Realtime** — tables `notes`, `tasks`, `todo_lists`, `workspace_members`, `note_comments`, `mentions` published via WebSocket
 - **Storage** — `note-attachments` (5 MB/file) and `exports` (100 MB/file) buckets
 
 All migrations live in `supabase/migrations/` and are applied lexicographically. After any schema change, run `npm run types` and commit the updated `shared/database.types.ts`.
