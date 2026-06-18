@@ -40,7 +40,8 @@ One row per user, created automatically by trigger `on_auth_user_created`.
 | `id` | uuid PK | | References `auth.users(id)` |
 | `display_name` | varchar(100) | `''` | User's display name |
 | `avatar_url` | text? | | URL to avatar image |
-| `settings` | jsonb | `{}` | User preferences. Known keys: `{ digest_enabled: boolean }` |
+| `settings` | jsonb | `{}` | User preferences. Known keys: `digest_enabled`, `anthropic_api_key`, `calendar_feed_token` |
+| `is_admin` | boolean | `false` | Global app-operator flag (powers `/admin`). Granted out-of-band; a `before update` trigger blocks end-users from self-escalating it |
 | `created_at` | timestamptz | `now()` | |
 | `updated_at` | timestamptz | `now()` | Auto-updated by trigger |
 
@@ -223,6 +224,7 @@ Discussion threads on workspace notes. Only notes that belong to a workspace can
 |---|---|---|
 | `handle_new_user()` | Trigger fn | Creates `profiles` row on `auth.users` INSERT |
 | `set_updated_at()` | Trigger fn | Updates `updated_at` on row change |
+| `protect_is_admin()` | Trigger fn | Reverts `profiles.is_admin` changes from end-user sessions (anti-escalation) |
 | `on_workspace_created()` | Trigger fn | Auto-adds workspace creator as owner member |
 | `toggle_task_complete(task_id)` | RPC | Toggle completion, advance date for recurring tasks |
 | `reorder_notes(updates)` | RPC | Bulk update `sort_order` on notes |

@@ -53,9 +53,11 @@ begin
 
   -- profiles are created automatically via handle_new_user trigger,
   -- but trigger won't fire on direct insert — create manually for seeding.
-  insert into public.profiles (id, display_name)
-  values (alice_id, 'Alice'), (bob_id, 'Bob')
-  on conflict (id) do nothing;
+  -- handle_new_user may have already created these rows from auth metadata, so
+  -- upsert is_admin (Alice is the local app-operator admin).
+  insert into public.profiles (id, display_name, is_admin)
+  values (alice_id, 'Alice', true), (bob_id, 'Bob', false)
+  on conflict (id) do update set is_admin = excluded.is_admin;
 
   -- ── Alice's tags ───────────────────────────────────────────────────────────
   insert into public.tags (id, user_id, name, color) values

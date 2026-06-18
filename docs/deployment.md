@@ -52,6 +52,7 @@ This deploys all functions:
 | `push-send` | Sends VAPID-signed push notifications to a user's devices |
 | `ai` | AI actions proxied to Anthropic |
 | `calendar-feed` | Public ICS calendar feed (see note below) |
+| `admin-stats` | App-operator aggregate metrics (requires global `is_admin`) |
 
 The `calendar-feed` function is public — calendar clients poll it with no auth header, so it runs with `verify_jwt = false` (declared in `supabase/config.toml`, which `supabase functions deploy` respects). It authenticates via a per-user token in the query string and reads data with the auto-injected `SUPABASE_SERVICE_ROLE_KEY` (no extra secret needed). Same pattern as `reminder-webhook`.
 

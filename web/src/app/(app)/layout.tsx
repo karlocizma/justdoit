@@ -12,7 +12,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!user) redirect('/login')
 
   const [{ data: profile }, { data: lists }, { data: memberships }] = await Promise.all([
-    supabase.from('profiles').select('display_name').eq('id', user.id).single(),
+    supabase.from('profiles').select('display_name, is_admin').eq('id', user.id).single(),
     supabase
       .from('todo_lists')
       .select('id, title, color, tasks(count)')
@@ -46,7 +46,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <AppShell>
       <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--jd-bg)' }}>
-        <Sidebar lists={mappedLists} user={userData} workspaces={workspaces} pendingInviteCount={pendingInviteCount} />
+        <Sidebar lists={mappedLists} user={userData} workspaces={workspaces} pendingInviteCount={pendingInviteCount} isAdmin={!!profile?.is_admin} />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <TopBar user={userData} />
           <main style={{ flex: 1, overflow: 'auto' }}>

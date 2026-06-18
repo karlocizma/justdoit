@@ -237,6 +237,7 @@ See [`docs/api-reference.md`](docs/api-reference.md) for complete documentation.
 | Edge Fn | `POST /functions/v1/push-send` | Send a push notification to a user's devices |
 | Edge Fn | `POST /functions/v1/ai` | AI actions: `summarize`, `suggest-tags`, `generate-tasks`, `smart-search` (proxies to Anthropic) |
 | Edge Fn | `GET /functions/v1/calendar-feed?token=…` | Public ICS feed of due-dated tasks/notes (per-user feed token, no JWT) |
+| Edge Fn | `GET /functions/v1/admin-stats` | App-operator aggregate metrics (requires global `is_admin`) |
 
 ---
 
