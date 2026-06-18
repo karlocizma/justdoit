@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test:offline": "node scripts/test-offline-merge.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -16,6 +17,7 @@
     "@types/d3": "^7.4.3",
     "@types/qrcode": "^1.5.6",
     "d3": "^7.9.0",
+    "dexie": "^4.4.4",
     "highlight.js": "^11.11.1",
     "marked": "^18.0.4",
     "marked-highlight": "^2.2.4",
