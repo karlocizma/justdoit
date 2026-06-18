@@ -4,22 +4,6 @@ Feature backlog and upcoming work. Items are roughly ordered by priority within 
 
 ---
 
-## In Progress / Next Up
-
-### Offline Mode
-Allow the app to work without an internet connection and sync automatically when the connection is restored.
-
-**Scope:**
-- **Local data store** — IndexedDB via [Dexie.js](https://dexie.org/) to cache notes and tasks locally
-- **Service worker** — cache the Next.js app shell so the UI loads offline (the push notification service worker `public/sw.js` is already registered — extend it)
-- **Write queue** — buffer mutations locally when offline, replay against Supabase when the connection returns
-- **Conflict resolution** — last-write-wins based on `updated_at` timestamp (covers the common case; CRDTs are an option if more granularity is needed later)
-- **Sync indicator** — visible badge when there are unsynced local changes
-
-**Depends on:** the service worker added for push notifications is a natural starting point.
-
----
-
 ## Planned
 
 ### Comments on Shared Notes
@@ -42,6 +26,7 @@ A React Native app sharing auth and data with the same Supabase backend. The API
 ## Completed
 
 ### Frontend Features
+- [x] **Offline Mode** — local-first data layer for notes, tasks and lists. IndexedDB cache via Dexie (`src/lib/offline/`); service worker caches the app shell (network-first navigations with `/offline` fallback, stale-while-revalidate assets) so the app loads offline. Optimistic writes go through a repository that updates the cache and queues an outbox op; a FIFO flush worker (retry/backoff, stops on first failure to preserve order) replays them when online. Last-write-wins conflict resolution on `updated_at`; recurring-task completion ported client-side to match the server RPC. Sync-status menu in the TopBar (Connected / Syncing / N pending / Offline / error) with manual "Sync now" and "Retry failed"; cache cleared on sign-out. Tag editing, AI, attachments, search, workspaces and export remain online-only. Pure logic covered by unit tests (`npm run test:offline`)
 - [x] **Progressive Web App (PWA)** — installable on desktop and mobile via `app/manifest.ts` (name, icons, standalone display, brand `theme_color`); generated icon set (192/512/maskable/apple-touch/notification badge) in `public/`; service worker registered app-wide via `ServiceWorkerRegister` with a minimal `fetch` handler so the app qualifies as installable (offline caching to be layered on for Offline Mode)
 - [x] **Kanban board view** — toggle between list and board view in any task list; drag cards between To Do / In Progress / Done columns via `@dnd-kit`; status synced to DB; assignee avatar and priority badge on cards
 - [x] **Note version history** — throttled snapshots saved to `note_versions` table; History panel in the note editor with version list, diff preview, and one-click restore

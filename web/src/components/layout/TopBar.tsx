@@ -5,6 +5,7 @@ import { useEffect, useState, useTransition } from 'react'
 import { useTheme } from '@/components/layout/ThemeProvider'
 import { TourButton } from '@/components/onboarding/TourModal'
 import { useSync } from '@/components/offline/SyncProvider'
+import { SyncStatusMenu } from '@/components/offline/SyncStatusMenu'
 import s from './TopBar.module.css'
 
 type User = { email: string; name?: string }
@@ -15,6 +16,7 @@ export function TopBar({ user }: { user: User }) {
   const [query, setQuery] = useState('')
   const { theme, toggleTheme } = useTheme()
   const { online, syncing, pendingCount, hasFailures } = useSync()
+  const [syncMenuOpen, setSyncMenuOpen] = useState(false)
   const initial = (user.name ?? user.email).slice(0, 2).toUpperCase()
 
   const syncLabel = !online
@@ -60,14 +62,21 @@ export function TopBar({ user }: { user: User }) {
         />
       </div>
       <div className={s.right}>
-        <div
-          className={s.sync}
-          title={online
-            ? (pendingCount > 0 ? `${pendingCount} change(s) waiting to sync` : 'Connected to the server')
-            : 'Offline — your changes are saved on this device and will sync when you reconnect'}
-        >
-          <span className={`${s.syncDot} ${online && !hasFailures ? s.connected : s.disconnected}`} />
-          <span className={s.syncLabel} suppressHydrationWarning>{syncLabel}</span>
+        <div className={s.syncWrap}>
+          <button
+            type="button"
+            className={s.sync}
+            onClick={() => setSyncMenuOpen(o => !o)}
+            aria-haspopup="dialog"
+            aria-expanded={syncMenuOpen}
+            title={online
+              ? (pendingCount > 0 ? `${pendingCount} change(s) waiting to sync` : 'Connected to the server')
+              : 'Offline — your changes are saved on this device and will sync when you reconnect'}
+          >
+            <span className={`${s.syncDot} ${online && !hasFailures ? s.connected : s.disconnected}`} />
+            <span className={s.syncLabel} suppressHydrationWarning>{syncLabel}</span>
+          </button>
+          {syncMenuOpen && <SyncStatusMenu onClose={() => setSyncMenuOpen(false)} />}
         </div>
         <TourButton />
         <button

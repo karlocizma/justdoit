@@ -55,10 +55,26 @@
   gap: 14px;
 }
 
+.syncWrap {
+  position: relative;
+}
+
 .sync {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 5px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--jd-radius-pill, 999px);
+  background: none;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.sync:hover {
+  background: var(--jd-surface-2);
+  border-color: var(--jd-border);
 }
 
 .syncDot {

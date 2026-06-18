@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { useLiveQuery } from 'dexie-react-hooks'
 import { createClient } from '@/lib/supabase/client'
 import { pullAll } from '@/lib/offline/sync'
-import { flush } from '@/lib/offline/outbox'
+import { flush, retryFailed } from '@/lib/offline/outbox'
 import { getDB, isOfflineCacheAvailable } from '@/lib/offline/db'
 
 type SyncState = {
@@ -20,6 +20,8 @@ type SyncState = {
   hasFailures: boolean
   /** Trigger a manual sync (pull + flush). */
   syncNow: () => void
+  /** Re-arm failed ops and flush them. */
+  retryNow: () => void
 }
 
 const SyncContext = createContext<SyncState | null>(null)
@@ -63,6 +65,12 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  const retryNow = useCallback(async () => {
+    if (!isOfflineCacheAvailable()) return
+    await retryFailed()
+    void sync()
+  }, [sync])
+
   useEffect(() => {
     const onOnline = () => { setOnline(true); void sync() }
     const onOffline = () => setOnline(false)
@@ -87,6 +95,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
         pendingCount: outbox.pending,
         hasFailures: outbox.failed > 0,
         syncNow: () => void sync(),
+        retryNow: () => void retryNow(),
       }}
     >
       {children}
@@ -104,6 +113,7 @@ export function useSync(): SyncState {
       pendingCount: 0,
       hasFailures: false,
       syncNow: () => {},
+      retryNow: () => {},
     }
   )
 }

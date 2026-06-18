@@ -19,7 +19,8 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { createClient } from '@/lib/supabase/client'
-import { reorderLists } from '@/lib/offline'
+import { reorderLists, clearCache } from '@/lib/offline'
+import { isOfflineCacheAvailable } from '@/lib/offline/db'
 import s from './Sidebar.module.css'
 
 type List = { id: string; title: string; color: string; open_count: number }
@@ -67,6 +68,8 @@ export function Sidebar({ lists: initialLists, user, workspaces = [], pendingInv
   }, [userMenuOpen])
 
   async function signOut() {
+    // Clear the local cache so another user on this device can't see the data.
+    if (isOfflineCacheAvailable()) await clearCache().catch(() => {})
     await supabase.auth.signOut()
     router.push('/login')
     router.refresh()
