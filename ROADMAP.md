@@ -11,6 +11,21 @@ Feature backlog and upcoming work. Items are roughly ordered by priority within 
 
 ---
 
+### ICS Calendar Feed
+A read-only, one-way calendar subscription so users can see their JustDoIt due-dates (tasks and notes with `due_at`) inside Google Calendar, Apple Calendar, Outlook, etc. A new Edge Function generates an `.ics` feed from the user's items, authenticated by a per-user, revocable feed token (not the session JWT, since calendar clients poll unattended) — likely stored on `profiles.settings`. Subscribe-URL UI in Settings with copy + regenerate. Reuses existing Edge Function patterns; no two-way sync (that would require provider OAuth + change webhooks and is out of scope here).
+
+---
+
+### Desktop App (Tauri)
+Package the existing Next.js web app as a native desktop client via Tauri — a small (~5 MB) Rust shell reusing 100% of the frontend. The offline-first data layer and PWA service worker (see Completed) already do the hard part, so this is mostly packaging: native window/menus/tray, OS notifications, and signed auto-updating builds in CI for macOS/Windows/Linux. (Note: the app is already installable as a PWA today; this is the path to a richer native experience.)
+
+---
+
+### Admin Dashboard (app-operator)
+An operator-facing dashboard for whoever runs the app — aggregate metrics (user count, notes/tasks volume, active workspaces, recent sign-ups) and basic health, not workspace-level admin. Requires introducing a **global admin role** (the app only has workspace owner/admin/member today): an `is_admin` flag on `profiles` or a JWT `app_metadata` role. Aggregate queries that span all users run in an Edge Function using the **service-role key** (bypassing RLS server-side) behind an admin check — the service-role key is never exposed to the browser. A new `/admin` route guarded by the global role.
+
+---
+
 ## Considering
 
 ### Mobile App
