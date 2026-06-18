@@ -21,7 +21,7 @@
 
 import { task } from "@trigger.dev/sdk/v3"
 import { createClient } from "@supabase/supabase-js"
-import { Resend } from "resend"
+import { sendEmail, emailConfigured } from "../lib/email.js"
 import JSZip from "jszip"
 import { exportReadyEmail } from "../lib/email-templates.js"
 
@@ -156,8 +156,7 @@ export const generateExport = task({
     }
 
     // ── Send email ──────────────────────────────────────────────────────────
-    const resendKey = process.env["RESEND_API_KEY"]
-    if (!resendKey) throw new Error("RESEND_API_KEY is not set")
+    if (!emailConfigured()) throw new Error("No email transport configured (SMTP_HOST or RESEND_API_KEY)")
 
     const { subject, html } = exportReadyEmail({
       displayName:  userName,
@@ -167,7 +166,7 @@ export const generateExport = task({
       taskCount,
     })
 
-    await new Resend(resendKey).emails.send({
+    await sendEmail({
       from:    process.env["FROM_EMAIL"] ?? "noreply@justdoit.app",
       to:      email,
       subject,

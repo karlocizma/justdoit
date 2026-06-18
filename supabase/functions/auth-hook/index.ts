@@ -102,8 +102,12 @@ Deno.serve(async (req: Request) => {
     })
   }
 
+  // Configurable so a self-hosted Trigger.dev instance can be used instead of
+  // the cloud API. Defaults to the cloud endpoint.
+  const triggerApiUrl = (Deno.env.get("TRIGGER_API_URL") ?? "https://api.trigger.dev").replace(/\/$/, "")
+
   const triggerRes = await fetch(
-    `https://api.trigger.dev/api/v1/tasks/${taskId}/trigger`,
+    `${triggerApiUrl}/api/v1/tasks/${taskId}/trigger`,
     {
       method: "POST",
       headers: {

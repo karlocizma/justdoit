@@ -136,4 +136,5 @@ Local Supabase URLs (from `supabase start`):
 - `docs/frontend-integration.md` — supabase-js patterns, realtime, storage, workspace invites
 - `docs/deployment.md` — production checklist
 - `CLOUD_SETUP.md` — step-by-step free-tier deployment guide
+- `SELF_HOSTING.md` — run the full stack self-hosted (no managed cloud); frontend Docker image in `web/Dockerfile`, app-layer compose in `self-hosting/`
 - `design-brief.md` + `frontend/` — UX/visual spec and UI kit

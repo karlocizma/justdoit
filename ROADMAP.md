@@ -23,17 +23,6 @@ A React Native app sharing auth and data with the same Supabase backend. The API
 
 ---
 
-### Self-Hosting
-A fully self-hostable deployment with no dependency on managed cloud services — for privacy-conscious users and homelab setups, and a natural companion to the desktop app. The backend is already ~80% there: the dev environment runs the entire Supabase stack (Postgres, Auth, PostgREST, Realtime, Storage, Edge Functions) in Docker. The work is productionizing that into a turnkey package:
-
-- **Backend** — a production `docker-compose` based on the official `supabase/docker`, plus the Next.js frontend as a containerized `next start` service (replacing Vercel).
-- **Background jobs (full parity)** — run **self-hosted Trigger.dev** (its v3 Docker self-host) alongside Supabase, so the existing job code (`reminder`, `recurring-tasks` cron, `email-digest` cron, `export` ZIP) runs unchanged. Keeps full feature parity with the cloud deployment rather than reimplementing schedules on `pg_cron`.
-- **Email** — swap the Resend SDK for SMTP (any self-hosted or external SMTP server); GoTrue auth emails already support SMTP config.
-- **Optional services degrade gracefully** — OAuth providers (GitHub/Google) and AI (Anthropic) stay external and optional; email/password auth and the core app work without them.
-- **Docs** — a `SELF_HOSTING.md` guide mirroring `CLOUD_SETUP.md`, covering secrets/config without managed dashboards (JWT secret, VAPID keys, SMTP creds).
-
----
-
 ## Completed
 
 ### Frontend Features
@@ -80,6 +69,7 @@ A fully self-hostable deployment with no dependency on managed cloud services �
 - [x] Design system: CSS Modules + `--jd-` design tokens, dark theme canonical
 
 ### Backend & Infrastructure
+- [x] **Self-Hosting** — run JustDoIt with no managed-cloud dependency (see [`SELF_HOSTING.md`](SELF_HOSTING.md)). Frontend ships as a Next.js **standalone** Docker image (`web/Dockerfile`, `output: 'standalone'`) brought up by `self-hosting/docker-compose.yml` alongside the official `supabase/docker` backend. Background jobs keep **full parity** on self-hosted Trigger.dev (`auth-hook` now reads a configurable `TRIGGER_API_URL`, defaulting to the cloud). Email is transport-agnostic: a shared `trigger/lib/email.ts` sends via **SMTP** (nodemailer) when `SMTP_HOST` is set, else Resend, else degrades — so the whole stack can run cloud-free. Known caveat: `workspace-invite` emails still use Resend (invite works in-app without it). Not yet validated end-to-end in a production cluster
 - [x] Supabase backend: auth, notes, tasks, tags, reminders, recurring tasks, workspaces, RLS
 - [x] Edge Functions: `dashboard`, `search`, `export`, `reminder-webhook`, `reminder-cancel`, `workspace-invite`, `push-subscribe`, `push-send`
 - [x] Trigger.dev background jobs: reminders, recurring tasks, daily digest, export ZIP

@@ -1,0 +1,41 @@
+# JustDoIt — app-layer services for a self-hosted deployment.
+#
+# This compose file runs the JustDoIt frontend. The backend (Supabase) and the
+# background-job runner (Trigger.dev) run as their own stacks — see
+# SELF_HOSTING.md. Bring this up after Supabase is healthy.
+#
+#   docker compose --env-file .env up -d --build
+#
+# All three stacks should share an external Docker network so the frontend can
+# reach Supabase by service name; create it once with:
+#
+#   docker network create justdoit
+#
+# (or point JUSTDOIT_SUPABASE_URL at a reachable host URL instead).
+
+name: justdoit
+
+networks:
+  justdoit:
+    external: true
+
+services:
+  web:
+    build:
+      context: ../web
+      dockerfile: Dockerfile
+      args:
+        # Inlined into the client bundle at build time.
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-}
+    image: justdoit-web:latest
+    restart: unless-stopped
+    networks: [justdoit]
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    environment:
+      # Server-side reads (server components / route handlers).
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-}

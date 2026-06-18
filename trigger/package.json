@@ -10,11 +10,13 @@
     "@trigger.dev/sdk":      "^3.0.0",
     "@supabase/supabase-js": "^2.49.0",
     "resend":                "^4.5.0",
+    "nodemailer":            "^6.9.0",
     "jszip":                 "^3.10.1"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/jszip": "^3.4.1",
+    "@types/nodemailer": "^6.4.0",
     "typescript":  "^5.8.3"
   }
 }

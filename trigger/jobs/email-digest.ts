@@ -13,7 +13,7 @@
 
 import { schedules } from "@trigger.dev/sdk/v3"
 import { createClient } from "@supabase/supabase-js"
-import { Resend } from "resend"
+import { sendEmail, emailConfigured } from "../lib/email.js"
 import { digestEmail } from "../lib/email-templates.js"
 
 function toDateString(d: Date): string {
@@ -29,11 +29,9 @@ export const dailyDigest = schedules.task({
     const key = process.env["SUPABASE_SERVICE_ROLE_KEY"]
     if (!url || !key) throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required")
 
-    const resendKey = process.env["RESEND_API_KEY"]
-    if (!resendKey) throw new Error("RESEND_API_KEY is not set")
+    if (!emailConfigured()) throw new Error("No email transport configured (SMTP_HOST or RESEND_API_KEY)")
 
     const db     = createClient(url, key, { auth: { persistSession: false } })
-    const resend = new Resend(resendKey)
     const from   = process.env["FROM_EMAIL"]  ?? "noreply@justdoit.app"
     const appUrl = process.env["APP_URL"]     ?? "https://justdoit.app"
     const today  = toDateString(new Date())
@@ -95,7 +93,7 @@ export const dailyDigest = schedules.task({
         appUrl,
       })
 
-      await resend.emails.send({ from, to: user.email, subject, html })
+      await sendEmail({ from, to: user.email, subject, html })
       sent++
     }
 

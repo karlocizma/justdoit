@@ -244,6 +244,8 @@ See [`docs/api-reference.md`](docs/api-reference.md) for complete documentation.
 
 See [`CLOUD_SETUP.md`](CLOUD_SETUP.md) for a step-by-step guide deploying on free tiers (Supabase + Trigger.dev + Resend + Vercel).
 
+See [`SELF_HOSTING.md`](SELF_HOSTING.md) to run the whole stack yourself with no managed-cloud dependency (self-hosted Supabase + Trigger.dev + SMTP + Dockerized frontend).
+
 See [`docs/deployment.md`](docs/deployment.md) for the full production checklist.
 
 Short version:

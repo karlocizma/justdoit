@@ -17,7 +17,7 @@
 
 import { task, wait } from "@trigger.dev/sdk/v3"
 import { createClient } from "@supabase/supabase-js"
-import { Resend } from "resend"
+import { sendEmail, emailConfigured } from "../lib/email.js"
 import { reminderEmail } from "../lib/email-templates.js"
 
 interface ReminderPayload {
@@ -82,8 +82,7 @@ export const sendReminder = task({
       const { data: { user } } = await db.auth.admin.getUserById(payload.user_id)
       if (!user?.email) throw new Error(`no email for user ${payload.user_id}`)
 
-      const resendKey = process.env["RESEND_API_KEY"]
-      if (!resendKey) throw new Error("RESEND_API_KEY is not set")
+      if (!emailConfigured()) throw new Error("No email transport configured (SMTP_HOST or RESEND_API_KEY)")
 
       const { subject, html } = reminderEmail({
         displayName,
@@ -92,7 +91,7 @@ export const sendReminder = task({
         appUrl: process.env["APP_URL"] ?? "https://justdoit.app",
       })
 
-      await new Resend(resendKey).emails.send({
+      await sendEmail({
         from:    process.env["FROM_EMAIL"] ?? "noreply@justdoit.app",
         to:      user.email,
         subject,
