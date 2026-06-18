@@ -1,0 +1,11 @@
+# Rust / Tauri build output
+src-tauri/target/
+src-tauri/gen/
+
+# Generated icon set (produced by `npm run icon` / CI); keep only the source
+src-tauri/icons/*
+!src-tauri/icons/icon.png
+
+# Node
+node_modules/
+package-lock.json

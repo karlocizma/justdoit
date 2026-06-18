@@ -11,6 +11,7 @@ This is a **monorepo** containing the complete application:
 | `/` (root) | Supabase backend: migrations, Edge Functions, Trigger.dev jobs, integration tests |
 | `web/` | Next.js 16 frontend |
 | `trigger/` | Background jobs (Trigger.dev v3) |
+| `desktop/` | Tauri v2 desktop app (native shell around the web app) |
 
 ---
 

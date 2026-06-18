@@ -4,15 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Layout
 
-This monorepo has three distinct packages with separate `package.json` files:
+This monorepo has four distinct packages with separate `package.json` files:
 
 | Directory | Purpose | Runtime |
 |---|---|---|
 | `/` (root) | Supabase backend config, migrations, Edge Functions, integration tests | Node (tsx) |
 | `web/` | Next.js 16 frontend | Node (Next.js) |
 | `trigger/` | Background jobs (Trigger.dev v3) | Node (ESM) |
+| `desktop/` | Tauri v2 desktop shell around the hosted web app | Rust + Node (Tauri CLI) |
 
-The root is the **backend-only** package. `trigger/` is declared as a workspace inside root `package.json`. `web/` is fully independent.
+The root is the **backend-only** package. `trigger/` is declared as a workspace inside root `package.json`. `web/` and `desktop/` are fully independent. `desktop/` loads the web app over HTTP(S) (URL from `JUSTDOIT_APP_URL`); a static bundle isn't viable because the frontend is server-rendered. Builds run via the `desktop-release.yml` CI workflow — see `desktop/README.md`.
 
 ## Commands
 

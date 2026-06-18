@@ -1,0 +1,88 @@
+name: Desktop Release
+
+# Builds the Tauri desktop app for macOS, Windows and Linux and uploads the
+# installers to a draft GitHub Release. macOS/Windows installers can only be
+# produced on their own runners, which is why this lives in CI rather than a
+# local build.
+#
+# Trigger by pushing a tag like `desktop-v0.1.0`, or run manually from the
+# Actions tab (workflow_dispatch) to override the URL the app loads.
+
+on:
+  push:
+    tags:
+      - "desktop-v*"
+  workflow_dispatch:
+    inputs:
+      app_url:
+        description: "URL the desktop app loads (overrides the JUSTDOIT_APP_URL repo variable)"
+        required: false
+        default: ""
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: "--target aarch64-apple-darwin"
+          - platform: macos-latest
+            args: "--target x86_64-apple-darwin"
+          - platform: ubuntu-22.04
+            args: ""
+          - platform: windows-latest
+            args: ""
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Cache cargo
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: Install desktop deps
+        working-directory: desktop
+        run: npm install
+
+      - name: Generate app icons
+        working-directory: desktop
+        run: npx --yes @tauri-apps/cli icon src-tauri/icons/icon.png
+
+      - name: Build & release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Baked into the binary at compile time (see app_url() in main.rs).
+          JUSTDOIT_APP_URL: ${{ github.event.inputs.app_url != '' && github.event.inputs.app_url || vars.JUSTDOIT_APP_URL }}
+        with:
+          projectPath: desktop
+          args: ${{ matrix.args }}
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || format('desktop-v0.0.0-run{0}', github.run_number) }}
+          releaseName: "JustDoIt Desktop ${{ github.ref_type == 'tag' && github.ref_name || github.run_number }}"
+          releaseBody: "Automated desktop build. Install the artifact for your platform."
+          releaseDraft: true
+          prerelease: false
