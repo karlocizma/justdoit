@@ -6,7 +6,8 @@ Feature backlog and upcoming work. Items are roughly ordered by priority within 
 
 ## Planned
 
-_Nothing queued right now — see **Considering** for ideas, or open an issue to propose one._
+### Offline sync: reconcile server-side deletes
+`pullAll` is incremental (only fetches rows with `updated_at` newer than the last pull) and merges them into the cache, so it never notices rows that were **hard-deleted** on the server — those linger in the local cache until a sign-out/clear. Soft-deletes (`deleted_at`) sync fine; the gap is hard deletes (e.g. a DB reset, or another device permanently removing a row). Options: a periodic full reconciliation pass that diffs cached ids against the server set and prunes the difference, or a tombstone/deletions feed. Cross-account leakage is already handled (the cache is wiped when the signed-in user changes); this is the same-user deletion case.
 
 ---
 

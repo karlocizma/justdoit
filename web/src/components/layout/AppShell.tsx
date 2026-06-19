@@ -8,7 +8,7 @@ import { SyncProvider } from '@/components/offline/SyncProvider'
 
 const INPUT_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT'])
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, userId }: { children: React.ReactNode; userId: string }) {
   const router = useRouter()
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
@@ -50,7 +50,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [router])
 
   return (
-    <SyncProvider>
+    <SyncProvider userId={userId}>
       {children}
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       {shortcutsOpen && <KeyboardShortcutsModal onClose={() => setShortcutsOpen(false)} />}

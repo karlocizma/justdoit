@@ -3,9 +3,11 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { createClient } from '@/lib/supabase/client'
-import { pullAll } from '@/lib/offline/sync'
+import { pullAll, clearCache } from '@/lib/offline/sync'
 import { flush, retryFailed } from '@/lib/offline/outbox'
 import { getDB, isOfflineCacheAvailable } from '@/lib/offline/db'
+
+const CACHE_OWNER_KEY = 'jd-cache-owner'
 
 type SyncState = {
   /** Browser connectivity. */
@@ -26,7 +28,7 @@ type SyncState = {
 
 const SyncContext = createContext<SyncState | null>(null)
 
-export function SyncProvider({ children }: { children: React.ReactNode }) {
+export function SyncProvider({ children, userId }: { children: React.ReactNode; userId: string }) {
   const [online, setOnline] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null)
@@ -72,19 +74,41 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   }, [sync])
 
   useEffect(() => {
+    let cancelled = false
+
+    // Guard against account switches on a shared browser: the cache is a single
+    // global IndexedDB, so if the signed-in user changed since it was last
+    // populated we must wipe it first — otherwise one account would see (and
+    // 404 on) another's cached notes/lists.
+    async function ensureOwnerThenSync() {
+      if (isOfflineCacheAvailable()) {
+        try {
+          const prev = localStorage.getItem(CACHE_OWNER_KEY)
+          if (prev !== userId) {
+            await clearCache()
+            localStorage.setItem(CACHE_OWNER_KEY, userId)
+          }
+        } catch {
+          // localStorage/IndexedDB unavailable — fall through to a normal sync.
+        }
+      }
+      if (!cancelled && navigator.onLine) void sync()
+    }
+
     const onOnline = () => { setOnline(true); void sync() }
     const onOffline = () => setOnline(false)
 
     setOnline(navigator.onLine)
-    if (navigator.onLine) void sync()
+    void ensureOwnerThenSync()
 
     window.addEventListener('online', onOnline)
     window.addEventListener('offline', onOffline)
     return () => {
+      cancelled = true
       window.removeEventListener('online', onOnline)
       window.removeEventListener('offline', onOffline)
     }
-  }, [sync])
+  }, [sync, userId])
 
   return (
     <SyncContext.Provider

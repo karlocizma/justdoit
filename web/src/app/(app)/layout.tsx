@@ -44,7 +44,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <AppShell>
+    <AppShell userId={user.id}>
       <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--jd-bg)' }}>
         <Sidebar lists={mappedLists} user={userData} workspaces={workspaces} pendingInviteCount={pendingInviteCount} isAdmin={!!profile?.is_admin} />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
