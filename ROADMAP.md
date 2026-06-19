@@ -6,6 +6,21 @@ Feature backlog and upcoming work. Items are roughly ordered by priority within 
 
 ## Planned
 
+### Chat with your notes (RAG / semantic search)
+Natural-language Q&A grounded in the user's own notes, with citations. Embed notes into a `pgvector` column (Supabase supports the extension), keep embeddings fresh on note save (online-only side effect, like version snapshots), and add an Edge Function that does vector retrieval + an Anthropic completion — the evolution of the existing "smart search" AI action. Same embedding index unlocks **related-notes suggestions** and smarter `[[ ]]` auto-linking.
+
+---
+
+### Public note sharing (read-only links)
+Share a single note via a tokenized public URL. Reuses the ICS-feed pattern almost exactly: a per-note revocable token (on `notes` or a small `note_shares` table) and a `verify_jwt = false` Edge Function (or public route) that renders the note read-only. Settings/editor UI to enable, copy, and revoke the link. No new infra.
+
+---
+
+### Presence on shared notes
+Realtime "who's viewing" avatars on workspace notes (live cursors as a follow-up). Built on Supabase Realtime **presence**, complementing the comments + mentions collaboration layer already shipped.
+
+---
+
 ### Offline sync: reconcile server-side deletes
 `pullAll` is incremental (only fetches rows with `updated_at` newer than the last pull) and merges them into the cache, so it never notices rows that were **hard-deleted** on the server — those linger in the local cache until a sign-out/clear. Soft-deletes (`deleted_at`) sync fine; the gap is hard deletes (e.g. a DB reset, or another device permanently removing a row). Options: a periodic full reconciliation pass that diffs cached ids against the server set and prunes the difference, or a tombstone/deletions feed. Cross-account leakage is already handled (the cache is wiped when the signed-in user changes); this is the same-user deletion case.
 
@@ -15,6 +30,46 @@ Feature backlog and upcoming work. Items are roughly ordered by priority within 
 
 ### Mobile App
 A React Native app sharing auth and data with the same Supabase backend. The API is already fully in place, and offline mode (see Completed) is done — a key prerequisite for a good mobile experience.
+
+---
+
+### Saved views / smart filters
+Save a query (e.g. "tasks due this week tagged #work") as a reusable sidebar item. Builds on the existing search.
+
+---
+
+### Timeline / Gantt view
+A project-planning view of tasks with due dates, alongside the existing list/board/calendar views.
+
+---
+
+### Task dependencies
+"Blocked by" relationships between tasks, beyond parent/sub-task nesting, for real project workflows.
+
+---
+
+### Personal API tokens + webhooks
+Generalize the feed-token pattern into scoped personal access tokens, plus outbound webhooks on events (note/task created, mention, etc.) to enable Zapier/n8n/automation. Pairs naturally with self-hosting.
+
+---
+
+### Two-way calendar sync
+The heavier follow-up to the one-way ICS feed: full Google/Outlook sync via provider OAuth + change webhooks.
+
+---
+
+### Account backup & restore
+Complement the existing export with a full re-import, making account migration and disaster recovery real. A good self-hosting companion.
+
+---
+
+### Public-endpoint hardening
+Rate limiting + error tracking (e.g. Sentry) on unauthenticated endpoints (`calendar-feed`, future public shares / API). Pairs with the admin dashboard.
+
+---
+
+### End-to-end encryption for notes
+A privacy tier where note content is encrypted client-side, strongly complementing self-hosting. (Trades off server-side search/AI — needs design.)
 
 ---
 
