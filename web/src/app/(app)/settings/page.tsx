@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { SettingsView } from '@/components/settings/SettingsView'
 
@@ -25,17 +26,19 @@ export default async function SettingsPage() {
   const settings = (profile?.settings ?? {}) as { digest_enabled?: boolean; anthropic_api_key?: string; calendar_feed_token?: string }
 
   return (
-    <SettingsView
-      user={{
-        id: user!.id,
-        email: user!.email!,
-        display_name: profile?.display_name ?? null,
-        avatar_url: profile?.avatar_url ?? null,
-      }}
-      memberships={memberships}
-      digestEnabled={settings.digest_enabled ?? false}
-      hasApiKey={!!settings.anthropic_api_key}
-      calendarToken={settings.calendar_feed_token ?? null}
-    />
+    <Suspense>
+      <SettingsView
+        user={{
+          id: user!.id,
+          email: user!.email!,
+          display_name: profile?.display_name ?? null,
+          avatar_url: profile?.avatar_url ?? null,
+        }}
+        memberships={memberships}
+        digestEnabled={settings.digest_enabled ?? false}
+        hasApiKey={!!settings.anthropic_api_key}
+        calendarToken={settings.calendar_feed_token ?? null}
+      />
+    </Suspense>
   )
 }

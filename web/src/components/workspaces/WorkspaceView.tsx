@@ -98,7 +98,7 @@ export function WorkspaceView({ workspace, notes: initialNotes, lists: initialLi
             </div>
           </div>
         </div>
-        <Link href="/settings" className={s.manageLink}>Manage workspace</Link>
+        <Link href="/settings?section=workspaces" className={s.manageLink}>Manage workspace</Link>
       </div>
 
       {/* Activity feed */}
@@ -166,7 +166,7 @@ export function WorkspaceView({ workspace, notes: initialNotes, lists: initialLi
       <section className={s.section}>
         <div className={s.sectionHead}>
           <span className={s.sectionLabel}>Members</span>
-          {canManage && <Link href="/settings" className={s.manageLink}>Invite member</Link>}
+          {canManage && <Link href="/settings?section=workspaces" className={s.manageLink}>Invite member</Link>}
         </div>
         <div className={s.memberList}>
           {members.map(m => {

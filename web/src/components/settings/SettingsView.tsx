@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { subscribeToPush, unsubscribeFromPush, isPushSubscribed } from '@/lib/push'
 import s from './SettingsView.module.css'
@@ -31,7 +31,11 @@ export function SettingsView({ user, memberships: initialMemberships, digestEnab
 }) {
   const router = useRouter()
   const supabase = createClient()
-  const [active, setActive] = useState<Section>('profile')
+  // Allow deep-linking to a tab via ?section= (e.g. /settings?section=workspaces).
+  const searchParams = useSearchParams()
+  const requestedSection = searchParams.get('section') as Section | null
+  const initialSection: Section = NAV.some(n => n.id === requestedSection) ? requestedSection! : 'profile'
+  const [active, setActive] = useState<Section>(initialSection)
 
   // Profile
   const [displayName, setDisplayName] = useState(user.display_name ?? '')
