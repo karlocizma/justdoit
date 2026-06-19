@@ -255,6 +255,9 @@ Discussion threads on workspace notes. Only notes that belong to a workspace can
 | `get_notes_by_tag(tag_name)` | RPC | Notes matching a tag name |
 | `accept_workspace_invite(workspace_id)` | RPC | Accept pending workspace invite |
 | `is_workspace_member(workspace_id)` | Helper | Returns boolean (SECURITY DEFINER, used in RLS) |
+| `is_workspace_admin(workspace_id)` | Helper | Owner/admin check (SECURITY DEFINER); avoids self-referential RLS recursion on `workspace_members` |
+
+> **RLS convention:** policies wrap `auth.uid()` / `auth.role()` as `(select auth.uid())` so they evaluate once per query (Supabase `auth_rls_initplan`), and route any check that reads `workspace_members` through the SECURITY DEFINER helpers above rather than an inline sub-select (which trips RLS recursion).
 
 ---
 
